@@ -1,0 +1,9 @@
+[meta]
+name = "Test Land"
+author = "zayshaa"
+category = "Testing"
+
+version = "9001"
+
+[script]
+imports = [ "Icons.as" , "Formatting.as", "Time.as"]
