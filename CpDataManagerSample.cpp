@@ -2,6 +2,9 @@ namespace Sample
 {
     ZUtil::CpDataManager@ cpDataManager;
 
+    CSmPlayer@ player;
+    CSmArenaClient@ playground;
+
     void Main(){
         @cpDataManager = ZUtil::CpDataManager();
         @cpDataManager.countChangeCallback = @OnCpChange;
@@ -20,17 +23,26 @@ namespace Sample
         print("New time: " + i + " : " + Time::Format(newTime));
     }
 
-    void Update(float dt){
+    void Update(float dt)
+    {
+        @playground = cast<CSmArenaClient>(GetApp().CurrentPlayground);
+        @player = ZUtil::GetPlayer(playground);
+        if (player is null) return;
+
         if (cpDataManager !is null)
         {
-            cpDataManager.Update();
+            cpDataManager.Update(player);
         }
     }
 
-    void Render(){
+    array<int> times(200);
+    void Render(CSmPlayer@ player, CSmArenaClient@ playground)
+    {
+        auto i = cpDataManager.GetAllCpTimes(player, times);
+
         if (cpDataManager !is null)
         {
-            cpDataManager.Render();
+            cpDataManager.Render(player);
         }
     }
 }
