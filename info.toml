@@ -6,4 +6,4 @@ category = "Testing"
 version = "9001"
 
 [script]
-imports = [ "Icons.as" , "Formatting.as", "Time.as", "lib\\ZUtil.as", "lib\\CpDataManager.as", "lib\\Panels.as"]
+imports = [ "Icons.as" , "Formatting.as", "Time.as", "lib\\Panels.as", "lib\\ZUtil.as", "lib\\CpDataManager.as", "lib\\GameState.as"]

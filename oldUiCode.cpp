@@ -1,43 +1,120 @@
 
 
-void Render()
-{
-    if (!CanShowTimes) return;
 
-    if (!windowsVisible) return;
+uint mapCpCount = 0;
+int currentCp = -1;
+bool doScroll = false;
+string mapName;
 
 
-    CSmPlayer@ player = GetPlayer();
-    if (player is null) return;
-
-    _curCpIndex = GetFinished_CpCount(player) - 1; // minus to get the index of the current cp,
-
-    if(_isRoyalMap)
+//in royal cpIndex is only ever 1 or 0;
+void OnCpChange(int cpIndex){
+    currentCp = cpIndex;
+    if (cpIndex < 0)
     {
-        DoRoyalLogic(player);
-    } else {
-        DoRaceLogic(player);
-    }
-    _lastCpIndex = _curCpIndex;
+        bool improvement = false;
+        
+        //if we've reached a higher CP, yay!
+        if (bl < cl){
+            improvement =  true;
+        } 
+        // if we've reached the same CP, 
+        // and last cur time is higher, yay!
+        else if ( (bl == cl) && (curTimes[cl - 1] < bestTimes[cl - 1]) ){
+            improvement =  true;
+        }
 
-    DrawWindow(player);
+        for (uint i = 0; i < curTimes.Length; i++)
+        {  
+            lastTimes[i] = curTimes[i];
+            lastTimesCount = curTimesCount;
+            
+            curTimes[i] = 0;
+            if (i >= cl)
+            {
+                splitTimes[i] = 0;
+            }
+        }
+
+        if (improvement)
+        {
+            print("New best! saving :)");
+            for (uint i = 0; i < lastTimes.Length; i++)
+            {
+                bestTimes[i] = lastTimes[i];
+                // print("" + bestTimes[i]);
+            }
+            SaveMapTimeData();
+        }
+    }
 }
 
-void DrawWindow(CSmPlayer@ player)
-{
-    UI::SetNextWindowPos(0, 170);
-    UI::SetNextWindowSize(280, Math::Min(_cpCount, 8) * 21 + 32);
-    UI::Begin("CP Times", UI::WindowFlags::NoTitleBar | UI::WindowFlags::NoCollapse | UI::WindowFlags::NoDocking);
-    // UI::Text("" + curCpIndex + " | " + _highestCpIndex);
+void OnNewTime(int i, int newTime){
+    // print("New time: " + i + " : " + Time::Format(newTime));
+    curTimes[i] = newTime;
+    splitTimes[i] = int(bestTimes[i]) - newTime;
+    startnew(FadeColorToWhite);
+    doScroll = true;
+}
 
-    // UI::Text(_playground.Arena.MapLandmarks[ player.CurrentLaunchedRespawnLandmarkIndex].Order + "");
+float g_dt;
+void Update(float dt){
+    g_dt = dt;
+    auto playground = cast<CSmArenaClient>(app.CurrentPlayground);
+    auto player = ZUtil::GetPlayer(playground);
+    if (!isMapLoaded)
+    {   
+        if (playground !is null && playground.Map !is null)
+        {
+            LoadMapTimeData(bestTimes);
+            mapName = playground.Map.MapInfo.NameForUi;
+            mapName = Regex::Replace(mapName, "\\$[wnoitsgz]", "");
+            mapName = Regex::Replace(mapName, "\\$", "\\$");
+            isMapLoaded = true;
+        }
+    } else {
+
+        isMapLoaded = (playground !is null && playground.Map !is null);
+    }
+
+    if (isMapLoaded && _cpDataManager !is null)
+    {
+        _cpDataManager.Update(player);
+    }
+}
+
+float fade = 0;
+void FadeColorToWhite(){
+    float t = 0;
+    while(t < 1)
+    {
+        t += g_dt / 1000 / 2;
+
+        fade = Math::Lerp(0.0f, 1.0f, t);
+
+        yield();
+    }
+}
+
+void Render()
+{
+    if(!isMapLoaded) return;
+
+    UI::SetNextWindowPos(0, 150);
+    UI::SetNextWindowSize(280, Math::Min(mapCpCount, 8) * 25 + 33 + 25);
+    UI::Begin("CP Times", UI::WindowFlags::NoTitleBar 
+                | UI::WindowFlags::NoCollapse 
+                | UI::WindowFlags::NoDocking);
+
+    UI::Text(mapName);
 
     UI::BeginGroup();
-    if(UI::BeginTable("table", 4, UI::TableFlags::SizingFixedFit)) {
+    if(UI::BeginTable("table", 4, UI::TableFlags::SizingFixedFit)) 
+    {
         UI::TableSetupColumn("CP", UI::TableColumnFlags::WidthFixed, 20);
         UI::TableSetupColumn("Time", UI::TableColumnFlags::WidthFixed, 65);
-        UI::TableSetupColumn("Best", UI::TableColumnFlags::WidthFixed, 65);
         UI::TableSetupColumn("Split", UI::TableColumnFlags::WidthFixed, 65);
+        UI::TableSetupColumn("Best", UI::TableColumnFlags::WidthFixed, 65);
         UI::TableHeadersRow();
 
         for (uint i = 0; i < curTimes.Length; i++)
@@ -45,7 +122,7 @@ void DrawWindow(CSmPlayer@ player)
             UI::TableNextRow();
             UI::TableNextColumn();
             // CP text
-            if (_isRoyalMap)
+            if (isRoyalMap)
             {
                 string letter = "";
                 if (i == 0) letter = "\\$fffW";
@@ -55,41 +132,55 @@ void DrawWindow(CSmPlayer@ player)
                 else if (i == 4) letter = "\\$888B";
                 UI::Text( letter ); UI::NextColumn();
             } else {
-                UI::Text((int(i) <= _curCpIndex ? "\\$3f3" : "") + (i == curTimes.Length - 1 ? "F" : "" + (i + 1))); UI::NextColumn();
+                UI::Text( (i == curTimes.Length - 1 ? "F" : tostring(i + 1)) ); 
             }
             UI::TableNextColumn();
 
-            // Current Time Text
-            UI::Text("" + (curTimes[i] == 0 ? "" : Time::Format(curTimes[i]))); UI::NextColumn();
+            // Current/Last Time Text
+            string color;
+            int displayTime = 0;
+            if(int(i) == currentCp) {
+                string h = FloatToHex(fade);
+                color = "\\$" + h + "f" + h;
+                displayTime = curTimes[i];
+            }
+            else if(int(i) > currentCp) {
+                color = color_Dark;
+                displayTime = lastTimes[i];
+            } else {
+                color = color_Light;
+                displayTime = curTimes[i];
+            }
+            UI::Text( color + (displayTime == 0 ? "" : Time::Format( displayTime )));
+            UI::TableNextColumn();
+            
+            auto split = splitTimes[i];
+            bool pastCur = int(i) > currentCp;
+            string sColor;
+            if (split > 0) {
+                sColor = pastCur ? color_DarkPos : color_LightPos;
+            } else if (split < 0){
+                sColor = pastCur ? color_DarkNeg : color_LightNeg;
+            } else{
+                sColor = color_Dark;
+            }
+            
+            // Split Time Text
+            UI::Text(sColor + Time::Format( Math::Abs(splitTimes[i])) ); 
             UI::TableNextColumn();
 
             // Best Time Text
-            UI::Text("" + (bestTimes[i] == 0 ? "" :Time::Format(bestTimes[i]))); UI::NextColumn();
+            UI::Text("" + (bestTimes[i] == 0 ? "" :Time::Format(bestTimes[i])));
             UI::TableNextColumn();
 
-            // Split Time Text
-            int split = splitTimes[i];
-            if (!_isRoyalMap && _curCpIndex < int(i))
-            {
-                UI::Text((split > 0 ? "\\$800+" : (split == 0 ? "\\$444" : "\\$080-")) + Time::Format(Math::Abs(split)));
-                UI::NextColumn();
-            } else{
-
-                uint currentLaunchIndex = player.CurrentLaunchedRespawnLandmarkIndex;
-                if (_curColor == i && currentLaunchIndex >= 5)
-                    UI::Text((split > 0 ? "\\$800+" : (split == 0 ? "\\$444" : "\\$080-")) + Time::Format(Math::Abs(split)));
-                else
-                    UI::Text((split > 0 ? "\\$f00+" : (split == 0 ? "\\$444" : "\\$0f0-")) + Time::Format(Math::Abs(split)));
-                UI::NextColumn();
-            }
         }
 
-        if (_doScroll)
+        if (doScroll)
         {
             float max = UI::GetScrollMaxY();
-            auto dist = Math::Max(_curCpIndex - 3,0) / Math::Max(float(_cpCount - 5),1.0f) * max;
+            auto dist = Math::Max(currentCp - 3,0) / Math::Max(float(mapCpCount - 5),1.0f) * max;
             UI::SetScrollY(dist);
-            _doScroll = false;
+            doScroll = false;
         }
 
       UI::EndTable();
@@ -97,131 +188,84 @@ void DrawWindow(CSmPlayer@ player)
     UI::EndGroup();
 
     UI::End();
+
+    // if (g_debugging)
+    // {
+    //     auto playground = cast<CSmArenaClient>(app.CurrentPlayground);
+    //     auto player = ZUtil::GetPlayer(playground);
+    //     _cpDataManager.Render(player);
+    // }
 }
 
-void DoRoyalLogic(CSmPlayer@ player)
+array<string> letters = {"A","B","C","D","E","F"};
+string FloatToHex(float v){
+    auto i = int(Math::Floor(v * 16));
+    i = Math::Clamp(i, 0, 15);
+    if (i < 10)
+    {
+        return tostring(i);
+    } 
+    return letters[i - 10];
+}
+
+int LoadMapTimeData(array<int>@ arr){
+    auto pg = cast<CSmArenaClient>(app.CurrentPlayground);
+    if (pg is null) return 0;
+    auto map = pg.Map;
+
+    auto mapId = map.MapInfo.MapUid;
+    auto name = map.MapInfo.NameForUi;
+
+    mapCpCount = ZUtil::GetEffectiveCpCount(pg);
+    bestTimes.Resize(mapCpCount);
+    curTimes.Resize(mapCpCount);
+    splitTimes.Resize(mapCpCount);
+    lastTimes.Resize(mapCpCount);
+
+    auto path = g_saveFolderPath + "\\" + mapId + ".json";
+    if (IO::FileExists(path))
+    {
+        print("Loading best time data for: " + name);
+        auto data = Json::FromFile(path);
+        auto times =  data["BestTimes"];
+        for (uint i = 0; i < times.Length; i++)
+        {
+            bestTimes[i] = int(times[i]);
+        }
+    }
+
+    return 0;
+}
+
+void SaveMapTimeData()
 {
-    uint currentLaunchIndex = player.CurrentLaunchedRespawnLandmarkIndex;
-    auto landmarks = _playground.Arena.MapLandmarks;
-    _curColor = landmarks[currentLaunchIndex].Order;
-    return;
-    if (_curCpIndex > _lastCpIndex) // NewCp
+    auto pg = cast<CSmArenaClient>(app.CurrentPlayground);
+    if (pg is null) return;
+    auto map = pg.Map;
+    if (map is null) return;
+
+    auto mapId = map.MapInfo.MapUid;
+    auto path = g_saveFolderPath + "\\" + mapId + ".json";
+
+    auto obj = Json::Object();
+    auto bestArr = Json::Array();
+
+    for (uint i = 0; i < curTimes.Length; i++)
     {
-        print("Finised color: " + currentLaunchIndex);
-        int currentTime = GetCpFinTime(player, 0);
-        curTimes[currentLaunchIndex] = currentTime;
-        int curBestTime = bestTimes[currentLaunchIndex];
-        if (curBestTime == 0 || curBestTime > currentTime)
-        {
-            bestTimes[currentLaunchIndex] = currentTime;
-            splitTimes[currentLaunchIndex] = currentTime - curBestTime;
-        } else {
-            splitTimes[currentLaunchIndex] = currentTime - curBestTime;
-        }
-    }
-    if (currentLaunchIndex >= 5) {
-
-        auto ps = GetApp().PlaygroundScript;
-        auto now = ( ps !is null )? ps.Now : 0;
-        if (int(now) < player.StartTime)
-        {
-            curTimes[_curColor] = 0;
-        } else {
-            curTimes[_curColor] = now - player.StartTime;
-        }
+        bestArr.Add(Json::Value(bestTimes[i]));
     }
 
-    if (_lastColor != _curColor)
-    {
-        print("Color Change: " + _curColor);
-    }
+    obj["MapUid"] = mapId;
+    obj["BestTimes"] = bestArr;
 
-    _lastColor = _curColor;
+    Json::ToFile(path, obj);
 }
 
-void DoRaceLogic(CSmPlayer@ player){
-    if (_curCpIndex > _lastCpIndex) // NewCp
-    {
-        curTimes[_curCpIndex] = GetCpFinTime(player, _curCpIndex);
-        splitTimes[_curCpIndex] = curTimes[_curCpIndex] - bestTimes[_curCpIndex];
-        if (bestTimes[_curCpIndex] == 0)
-            splitTimes[_curCpIndex] = 0;
-        _doScroll = true;
-        if (_curCpIndex > _highestCpIndex)
-        {
-            _highestCpIndex = _curCpIndex;
-            _isNewPb = true;
-        }
-    }
-    if (_curCpIndex < _lastCpIndex) // Reset
-    {
-        _doScroll = true;
-        // print("reset!");
-        //checking if we've reached a higher cp than before, or reached the finish
-        if (_isNewPb || _lastCpIndex == int(curTimes.Length - 1) || _lastCpIndex == _highestCpIndex){
 
-            if(curTimes[_highestCpIndex] < bestTimes[_highestCpIndex] || bestTimes[_highestCpIndex] == 0){
-            // print("New Best");
-                for (uint i = 0; i < curTimes.Length; i++)
-                {
-                    bestTimes[i] = curTimes[i];
-                }
-            }
-            _isNewPb = false;
-        }
-
-        for (uint i = _lastCpIndex +1 ; i < splitTimes.Length; i++)
-        {
-            splitTimes[i] = 0;
-        }
-
-        for (uint i = 0; i < curTimes.Length; i++)
-        {
-            lastTimes[i] = curTimes[i];
-            curTimes[i] = 0;
-        }
-        _lastCpIndex = -1;
-    }
-}
-g40
-int iSel = 0;
-void RenderInterface2(){
-    auto app = GetApp();
-    if (app.CurrentPlayground is null) return;
-    auto ArenaNod = cast<CSmArenaClient>(app.CurrentPlayground).Arena;
-
-    if (ArenaNod.Players.Length == 0) return;
-    auto player = cast<CSmPlayer>(ArenaNod.Players[0]);
-
-    auto ArenaNodType = Reflection::TypeOf(ArenaNod);
-    auto playerType = Reflection::TypeOf(player);
-
-    UI::Begin("mem info");
-
-    auto members = playerType.get_Members();
-
-    auto CPTimesArrayPtr = Dev::GetOffsetUint64(player, 0x688 - 0x10);
-    auto count = Dev::GetOffsetUint16(player, 0x680);
-    UI::InputText(count + "", Text::FormatPointer(CPTimesArrayPtr));
-
-    for (uint i = 0; i < count; i++)
-    {
-        auto t = Dev::ReadInt32(CPTimesArrayPtr + i * 0x20 + 0x3c) - player.StartTime;
-        auto s = Time::Format(t);
-        UI::Text(s) ;
-    }
-
-    auto playerArrPtr = Dev::GetOffsetUint64(ArenaNod, ArenaNodType.GetMember("Players").Offset);
-    auto scoreOffset = playerType.GetMember("Score").Offset - 0x680;
-
-    UI::InputText("!Score Offset: ", Text::FormatPointer(uint64(scoreOffset)));
-
-
-    for (uint i = 0; i < members.Length; i++)
-    {
-        UI::Text(Text::FormatPointer(uint64(members[i].Offset)).SubStr(12) + " : " + members[i].get_Name());
-    }
-
-
-    UI::End();
+bool windowsVisible = true;
+void RenderMenu(){
+    if (UI::MenuItem("\\$2f9" + Icons::PuzzlePiece + "\\$fff CP Times", selected: windowsVisible, enabled: GetApp().CurrentPlayground !is null))
+	{
+		windowsVisible = !windowsVisible;
+	}
 }
