@@ -1,3 +1,5 @@
+// [Setting]
+// float g_fontSize = 20;
 
 class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGameStateEvents
 {
@@ -18,10 +20,13 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
     int currentCp = -1;
     bool doScroll = false;
 
+    Resources::Font@ g_font;
+
     CpTimesPanel()
     {
-        super("Checkpoint Times", vec2(5,350), vec2(300,100));
+        super("Checkpoint Times", vec2(1,435), vec2(315,100));
 
+        @g_font = Resources::GetFont("DroidSans-Bold.ttf",20);
         m_moveHud = true;
     }
     
@@ -108,6 +113,12 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
 
     void OnCPNewTimeEvent(int i, int newTime)
     {
+        if (newTime < 0)
+        {
+            print("invalid time: " + newTime);
+            return;
+        }
+        
         if (!g_gameState.isRoyalMap)
         {
             curTimes[i] = newTime;
@@ -150,21 +161,25 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
     { 
         if(!g_gameState.hasMap) return;
 
+        UI::PushStyleColor(UI::Col::WindowBg, vec4(0,0,0,.2f));
         UI::SetNextWindowPos(int(m_pos.x), int(m_pos.y));
         UI::SetNextWindowSize(int(m_size.x), Math::Min(curTimes.Length, 8) * 25 + 33 + 25);
         UI::Begin("CP Times", UI::WindowFlags::NoTitleBar 
                     | UI::WindowFlags::NoCollapse 
                     | UI::WindowFlags::NoDocking);
+                    
 
-        UI::Text(g_gameState.coloredMapName);
+        UI::PushFont(g_font);
 
+        UI::Text("\\$s" + g_gameState.coloredMapName);
+        
         UI::BeginChild("cpTimesList");
         if(UI::BeginTable("table", 4, UI::TableFlags::SizingFixedFit)) 
         {
-            UI::TableSetupColumn("CP", UI::TableColumnFlags::WidthFixed, 20);
-            UI::TableSetupColumn("Time", UI::TableColumnFlags::WidthFixed, 65);
-            UI::TableSetupColumn("Split", UI::TableColumnFlags::WidthFixed, 65);
-            UI::TableSetupColumn("Best", UI::TableColumnFlags::WidthFixed, 65);
+            UI::TableSetupColumn("\\$sCP", UI::TableColumnFlags::WidthFixed, 20);
+            UI::TableSetupColumn("\\$sTime", UI::TableColumnFlags::WidthFixed, 80);
+            UI::TableSetupColumn("\\$sSplit", UI::TableColumnFlags::WidthFixed, 80);
+            UI::TableSetupColumn("\\$sBest", UI::TableColumnFlags::WidthFixed, 80);
             UI::TableHeadersRow();
 
             for (uint i = 0; i < curTimes.Length; i++)
@@ -175,14 +190,14 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
                 if (g_gameState.isRoyalMap)
                 {
                     string letter = "";
-                    if (i == 0) letter = "\\$fffW";
-                    else if (i == 1) letter = "\\$0f0G";
-                    else if (i == 2) letter = "\\$55fB";
-                    else if (i == 3) letter = "\\$f00R";
-                    else if (i == 4) letter = "\\$888B";
+                    if (i == 0) letter = "\\$s\\$fffW";
+                    else if (i == 1) letter = "\\$s\\$0f0G";
+                    else if (i == 2) letter = "\\$s\\$55fB";
+                    else if (i == 3) letter = "\\$s\\$f00R";
+                    else if (i == 4) letter = "\\$s\\$888B";
                     UI::Text( letter ); UI::NextColumn();
                 } else {
-                    UI::Text( (i == curTimes.Length - 1 ? "F" : tostring(i + 1)) ); 
+                    UI::Text( "\\$s" + (i == curTimes.Length - 1 ? "F" : tostring(i + 1)) ); 
                 }
                 UI::TableNextColumn();
 
@@ -201,7 +216,7 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
                     color = color_Light;
                     displayTime = curTimes[i];
                 }
-                UI::Text( color + (displayTime == 0 ? "" : Time::Format( displayTime )));
+                UI::Text( "\\$s" + color + (displayTime == 0 ? "" : Time::Format( displayTime )));
                 UI::TableNextColumn();
                 
                 auto split = splitTimes[i];
@@ -216,11 +231,11 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
                 }
                 
                 // Split Time Text
-                UI::Text(sColor + Time::Format( Math::Abs(splitTimes[i])) ); 
+                UI::Text("\\$s" + sColor + Time::Format( Math::Abs(splitTimes[i])) ); 
                 UI::TableNextColumn();
 
                 // Best Time Text
-                UI::Text("" + (bestTimes[i] == 0 ? "" :Time::Format(bestTimes[i])));
+                UI::Text("\\$s" + (bestTimes[i] == 0 ? "" :Time::Format(bestTimes[i])));
                 UI::TableNextColumn();
 
             }
@@ -237,7 +252,10 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
         }
         UI::EndChild();
 
+        UI::PopFont();
+
         UI::End();
+        UI::PopStyleColor();
 
     }
 

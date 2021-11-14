@@ -9,14 +9,18 @@ ZUtil::GameState@ g_gameState;
 
 CpTimesPanel@ cpTimesPanel;
 
-string color_DarkPos = "\\$272+";
-string color_LightPos = "\\$0D0+";
+string color_DarkPos = "\\$272-";
+string color_LightPos = "\\$0D0-";
 string color_Dark = "\\$444";
 string color_Light = "\\$FFF";
-string color_DarkNeg = "\\$722-";
-string color_LightNeg = "\\$D00-";
+string color_DarkNeg = "\\$722+";
+string color_LightNeg = "\\$D00+";
 
 float g_dt;
+
+Dev::HookInfo@ hook;
+
+bool popup = true;
 
 void Main(){
     @g_app = cast<CTrackMania>(GetApp());
@@ -35,11 +39,30 @@ void Main(){
 
     _panels.InsertLast(cpTimesPanel);
     
-    // auto DebugUiPanel = DebuggingUiPanel();
-    // g_cpDataManager.RegisterCallbacks(DebugUiPanel);
-    // _panels.InsertLast(DebugUiPanel);
+    if (g_debugging)
+    {
+        auto DebugUiPanel = DebuggingUiPanel();
+        _panels.InsertLast(DebugUiPanel);
+    }
 
     print("Cp Times Initialized!");
+
+    
+    // auto base =  Dev::BaseAddress();
+    // @hook = Dev::Hook(base + 0x1092f73, 0, "Test");
+
+}
+
+void Test(uint r12){
+    print("test" + r12);
+}
+
+void OnDestroyed(){
+    print("OnDestroyed");
+    if (hook !is null)
+    {
+        Dev::Unhook(hook);
+    }
 }
 
 void Update(float dt)
