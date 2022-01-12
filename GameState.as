@@ -1,6 +1,6 @@
 namespace ZUtil
 {
-    funcdef void MapLoadEvent(CGameCtnChallenge@, CSmArena@ arena);
+    funcdef void MapLoadEvent(CGameCtnChallenge@, CSmArena@);
     funcdef void PlayerLoadEvent(CSmPlayer@);
 
     interface IHandleGameStateEvents{

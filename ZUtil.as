@@ -48,7 +48,6 @@ namespace ZUtil
     {    
         if (arena is null || map is null) return 0;
 
-        auto waypoints = arena.MapWaypoints;
         auto landmarks = arena.MapLandmarks;
 
         if (landmarks.Length == 0) return 0;
@@ -60,11 +59,9 @@ namespace ZUtil
         uint _cpCount = 1; // starting at 1 because there is always a finish
 
         // if a cp has an order > 0, it may be a linked CP, so we increment that index and count them later
-        for (uint i = 0; i < waypoints.Length; i++)
+        for (uint i = 0; i < landmarks.Length; i++)
         {
-            auto wp = waypoints[i];
-
-            auto lm = landmarks[wp.Id.Value];
+            auto lm = landmarks[i];
 
             auto tag = lm.Tag;
             if (lm.Tag == "Checkpoint" || lm.Tag == "LinkedCheckpoint" )
