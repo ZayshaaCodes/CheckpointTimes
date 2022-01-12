@@ -10,6 +10,9 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
     array<int> lastTimes(0);
     array<int> bestTimes(0);
     array<int> splitTimes(0);
+    array<int> resetCounts(0);
+    array<int> lastResetCounts(0);
+    array<int> bestResetCounts(0);
     // storing the count independently from array size
     // in order to make all checkpoint indexes valid
     int curTimesCount;
@@ -20,11 +23,13 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
     int currentCp = -1;
     bool doScroll = false;
 
+    int respawnsAtLastCP = 0;
+
     Resources::Font@ g_font;
 
     CpTimesPanel()
     {
-        super("Checkpoint Times", vec2(1,435), vec2(315,100));
+        super("Checkpoint Times", vec2(1,400), vec2(380,100));
 
         @g_font = Resources::GetFont("DroidSans-Bold.ttf",20);
         m_moveHud = true;
@@ -39,11 +44,17 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
             lastTimes.Resize(newCount);
             bestTimes.Resize(newCount);
             splitTimes.Resize(newCount);
+            resetCounts.Resize(newCount);
+            lastResetCounts.Resize(newCount);
+            bestResetCounts.Resize(newCount);
 
         Clear(curTimes);
         Clear(lastTimes);
         Clear(bestTimes);
         Clear(splitTimes);
+        Clear(resetCounts);
+        Clear(lastResetCounts);
+        Clear(bestResetCounts);
         
         curTimesCount = lastTimesCount = splitTimesCount = bestTimesCount = 0;
         currentCp = -1;
@@ -85,22 +96,25 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
                 for (uint i = 0; i < curTimes.Length; i++)
                 {  
                     lastTimes[i] = curTimes[i];
+                    lastResetCounts[i] = resetCounts[i];
                     lastTimesCount = curTimesCount;
                     
                     curTimes[i] = 0;
+                    resetCounts[i] = 0;
                     if (int(i) >= curTimesCount )
                     {
                         splitTimes[i] = 0;
                     }
                 }
                 curTimesCount = 0;
-                    
+                respawnsAtLastCP = 0;
                 if (improvement)
                 {
                     print("New best! saving :)");
                     for (uint i = 0; i < lastTimes.Length; i++)
                     {
                         bestTimes[i] = lastTimes[i];
+                        bestResetCounts[i] = lastResetCounts[i];
                         bestTimesCount = lastTimesCount;
                         // print("" + bestTimes[i]);
                     }
@@ -121,10 +135,17 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
         
         if (!g_gameState.isRoyalMap)
         {
+            auto resCount = g_gameState.player.Score.NbRespawnsRequested;
+
+            //print(resCount - respawnsAtLastCP);
+
             curTimes[i] = newTime;
+            resetCounts[i] = resCount - respawnsAtLastCP;
             curTimesCount++;
             splitTimes[i] = int(bestTimes[i]) - newTime;
-            splitTimesCount++;
+            splitTimesCount++;     
+
+            respawnsAtLastCP = resCount;     
         } else {
             auto curLmIndex = g_gameState.player.CurrentLaunchedRespawnLandmarkIndex;
             auto curLandmark = g_gameState.arena.MapLandmarks[curLmIndex];
@@ -140,6 +161,7 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
             if (curTimes[currentCp] < bestTimes[currentCp] || bestTimes[currentCp] == 0)
             {
                 bestTimes[currentCp] = curTimes[currentCp];
+                bestResetCounts[currentCp] = resetCounts[currentCp];
                 SaveMapTimeData();
             }
         }
@@ -154,16 +176,17 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
 
     // void Update(float dt) override 
     // {
-
+        
     // }
 
     void Render() override 
     { 
         if(!g_gameState.hasMap) return;
 
-        UI::PushStyleColor(UI::Col::WindowBg, vec4(0,0,0,.2f));
+        UI::PushStyleColor(UI::Col::WindowBg, vec4(0,0,0,.4f));
         UI::SetNextWindowPos(int(m_pos.x), int(m_pos.y));
-        UI::SetNextWindowSize(int(m_size.x), Math::Min(curTimes.Length, 8) * 25 + 33 + 25);
+        UI::SetNextWindowSize(int(m_size.x), Math::Min(curTimes.Length, 8) * 29
+         + 35 + 25);
         UI::Begin("CP Times", UI::WindowFlags::NoTitleBar 
                     | UI::WindowFlags::NoCollapse 
                     | UI::WindowFlags::NoDocking);
@@ -174,13 +197,16 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
         UI::Text("\\$s" + g_gameState.coloredMapName);
         
         UI::BeginChild("cpTimesList");
-        if(UI::BeginTable("table", 4, UI::TableFlags::SizingFixedFit)) 
+        if(UI::BeginTable("table", 5, UI::TableFlags::SizingFixedFit)) 
         {
             UI::TableSetupColumn("\\$sCP", UI::TableColumnFlags::WidthFixed, 20);
+            UI::TableSetupColumn("\\$sR", UI::TableColumnFlags::WidthFixed, 20);
             UI::TableSetupColumn("\\$sTime", UI::TableColumnFlags::WidthFixed, 80);
-            UI::TableSetupColumn("\\$sSplit", UI::TableColumnFlags::WidthFixed, 80);
-            UI::TableSetupColumn("\\$sBest", UI::TableColumnFlags::WidthFixed, 80);
+            UI::TableSetupColumn("\\$sSplit", UI::TableColumnFlags::WidthFixed, 85);
+            UI::TableSetupColumn("\\$sBest", UI::TableColumnFlags::WidthFixed, 85);
             UI::TableHeadersRow();
+
+            string color;
 
             for (uint i = 0; i < curTimes.Length; i++)
             {
@@ -201,8 +227,26 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
                 }
                 UI::TableNextColumn();
 
+                // Best Time Text
+                int displayReset = 0;
+
+                if(int(i) == currentCp) {
+                    string h = FloatToHex(fade);
+                    color = "\\$" + h + "f" + h;
+                    displayReset = resetCounts[i];
+                }
+                else if(int(i) > currentCp) {
+                    color = color_Dark;
+                    displayReset = lastResetCounts[i];
+                } else {
+                    color = color_Light;
+                    displayReset = resetCounts[i];
+                }
+
+                UI::Text("\\$s" + color + displayReset);
+                UI::TableNextColumn();
+
                 // Current/Last Time Text
-                string color;
                 int displayTime = 0;
                 if(int(i) == currentCp) {
                     string h = FloatToHex(fade);
@@ -235,9 +279,8 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
                 UI::TableNextColumn();
 
                 // Best Time Text
-                UI::Text("\\$s" + (bestTimes[i] == 0 ? "" :Time::Format(bestTimes[i])));
+                UI::Text("\\$s" + (bestTimes[i] == 0 ? "" : bestResetCounts[i] + " - " + Time::Format(bestTimes[i])));
                 UI::TableNextColumn();
-
             }
 
             if (doScroll)
@@ -269,15 +312,19 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
 
         auto obj = Json::Object();
         auto bestArr = Json::Array();
+        auto resArr = Json::Array();
 
         for (uint i = 0; i < curTimes.Length; i++)
         {
             bestArr.Add(Json::Value(bestTimes[i]));
+            resArr.Add(Json::Value(bestResetCounts[i]));
+            //print(resetCounts[i]);
         }
 
         obj["MapName"] = g_gameState.trimmedMapName;
         obj["MapUid"] = mapId;
         obj["BestTimes"] = bestArr;
+        obj["ResetCounts"] = resArr;
 
         Json::ToFile(path, obj);
     }
@@ -310,6 +357,7 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
     uint LoadTimes(string path){
         auto data = Json::FromFile(path);
         auto times = data["BestTimes"];
+        auto resCounts = data["ResetCounts"];
 
         uint c = 0;
         for (uint i = 0; i < times.Length; i++)
@@ -318,6 +366,15 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
             if (thisTime != 0) c++;
 
             bestTimes[i] = thisTime;
+        }
+
+        if(int(resCounts.GetType()) == 4)
+        {
+            print("found reset counts");
+            for (uint i = 0; i < resCounts.Length; i++)
+            {
+                bestResetCounts[i] = resCounts[i];
+            }
         }
 
         return c;
