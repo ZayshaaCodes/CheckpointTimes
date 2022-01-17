@@ -39,11 +39,11 @@ void Main(){
 
     _panels.InsertLast(cpTimesPanel);
     
-    if (g_debugging)
-    {
-        auto DebugUiPanel = DebuggingUiPanel();
-        _panels.InsertLast(DebugUiPanel);
-    }
+    // if (g_debugging)
+    // {
+    //     auto DebugUiPanel = DebuggingUiPanel();
+    //     _panels.InsertLast(DebugUiPanel);
+    // }
 
     print("Cp Times Initialized!");
 

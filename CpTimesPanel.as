@@ -29,7 +29,7 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
 
     CpTimesPanel()
     {
-        super("Checkpoint Times", vec2(1,400), vec2(380,100));
+        super("Checkpoint Times", CPTimesPanelPosition, vec2(380,100));
 
         @g_font = Resources::GetFont("DroidSans-Bold.ttf",20);
         m_moveHud = true;
@@ -296,6 +296,8 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
         UI::EndChild();
 
         UI::PopFont();
+
+        CPTimesPanelPosition = UI::GetWindowPos();
 
         UI::End();
         UI::PopStyleColor();
