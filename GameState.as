@@ -64,11 +64,9 @@ namespace ZUtil
                 {
                     hasMap = true;
                     isRoyalMap = map.MapType == "TrackMania\\TM_Royal";
-                    trimmedMapName = Regex::Replace(map.MapInfo.NameForUi, """(\$[wnmoitsgzbWNMOITSGZB]|\$[0-9a-fA-F]{3})""", "");
+                    trimmedMapName = ZUtil::GetTrimmedMapName(map);
                     
                     coloredMapName = playground.Map.MapInfo.NameForUi;
-                    
-                    
                     coloredMapName = Regex::Replace(coloredMapName, "\\$0[^0-9A-Fa-f]", "\\$");
                     coloredMapName = Regex::Replace(coloredMapName, "\\$[wnoitsgzbWNMOITSGZB]", "");
                     coloredMapName = Regex::Replace(coloredMapName, "\\$", "\\$");

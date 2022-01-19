@@ -1,13 +1,17 @@
+
+
 CTrackMania@ g_app;
 string g_saveFolderPath;
 bool g_debugging = true;
 
 array<ZUtil::PluginPanel@> _panels(0);
 
+ZUtil::CpEventManager@ g_cpEventManager;
 ZUtil::CpDataManager@ g_cpDataManager;
 ZUtil::GameState@ g_gameState;
 
 CpTimesPanel@ cpTimesPanel;
+CpTimesHistoryPanel@ cpTimesHistoryPanel;
 
 string color_DarkPos = "\\$272-";
 string color_LightPos = "\\$0D0-";
@@ -18,26 +22,38 @@ string color_LightNeg = "\\$D00+";
 
 float g_dt;
 
-Dev::HookInfo@ hook;
-
 bool popup = true;
+
+void RenderMenu()
+{
+if (UI::MenuItem("\\$2f9" + Icons::PuzzlePiece + "\\$fff Cp Times History", selected: historyWindowVisible, enabled: GetApp().Editor !is null))
+	{
+		historyWindowVisible = !historyWindowVisible;
+	}
+}
 
 void Main(){
     @g_app = cast<CTrackMania>(GetApp());
 
-    g_saveFolderPath = IO::FromDataFolder("CheckpointTimes");
+    g_saveFolderPath = IO::FromDataFolder("CheckpointTimes2");
     
     if(!IO::FolderExists(g_saveFolderPath)) IO::CreateFolder(g_saveFolderPath);
 
     @cpTimesPanel = CpTimesPanel();
+    @cpTimesHistoryPanel = CpTimesHistoryPanel();
 
-    @g_cpDataManager = ZUtil::CpDataManager();
+    @g_cpEventManager = ZUtil::CpEventManager();
+    @g_cpDataManager = CpDataManager();
     @g_gameState = ZUtil::GameState();
 
-    g_cpDataManager.RegisterCallbacks(cpTimesPanel);
-    g_gameState.RegisterLoadCallbacks(cpTimesPanel);
+    g_cpEventManager.RegisterCallbacks(g_cpDataManager);
+    g_gameState.RegisterLoadCallbacks(g_cpDataManager);
+
+    // g_gameState.RegisterLoadCallbacks(cpTimesPanel);
+    // g_gameState.RegisterLoadCallbacks(cpTimesHistoryPanel);
 
     _panels.InsertLast(cpTimesPanel);
+    _panels.InsertLast(cpTimesHistoryPanel);
     
     // if (g_debugging)
     // {
@@ -47,48 +63,42 @@ void Main(){
 
     print("Cp Times Initialized!");
 
-    
-    // auto base =  Dev::BaseAddress();
-    // @hook = Dev::Hook(base + 0x1092f73, 0, "Test");
-
-}
-
-void Test(uint r12){
-    print("test" + r12);
 }
 
 void OnDestroyed(){
-    print("OnDestroyed");
-    if (hook !is null)
-    {
-        Dev::Unhook(hook);
-    }
+  
 }
 
 void Update(float dt)
 {
     g_dt = dt;
     g_gameState.Update(dt);
-    g_cpDataManager.Update(g_gameState.player);
+    g_cpEventManager.Update(g_gameState.player);
 
-    for (uint i = 0; i < _panels.Length; i++) _panels[i].Update(dt);
+    for (uint i = 0; i < _panels.Length; i++) 
+        _panels[i].Update(dt);
 }
 
 void Render()
 {
-    //g_cpDataManager.Render(g_gameState.player);
-    for (uint i = 0; i < _panels.Length; i++) _panels[i].InternalRender();
+    //g_cpEventManager.Render(g_gameState.player);
+    for (uint i = 0; i < _panels.Length; i++) 
+        _panels[i].InternalRender();
 }
 
 
 void OnSettingsChanged(){
-    for (uint i = 0; i < _panels.Length; i++) _panels[i].OnSettingsChanged();
+    for (uint i = 0; i < _panels.Length; i++) 
+        _panels[i].OnSettingsChanged();
+
+    g_cpDataManager.OnSettingsChanged();
 }
 
 
 void RenderInterface()
 {
-    for (uint i = 0; i < _panels.Length; i++) _panels[i].RenderInterface();
+    for (uint i = 0; i < _panels.Length; i++) 
+        _panels[i].RenderInterface();
 }
 
 
@@ -101,6 +111,10 @@ string FloatToHex(float v){
         return tostring(i);
     } 
     return letters[i - 10];
+}
+
+string ColorToHex(vec4 color){
+    return "\\$" + FloatToHex(color.x) + FloatToHex(color.y) + FloatToHex(color.z);
 }
 
 //Todo: improve this...
