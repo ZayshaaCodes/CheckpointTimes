@@ -46,11 +46,11 @@ namespace ZUtil
             // Playground
             if (!hasPlayground && !playgroundIsNull)
             {
-                print("");
-                print("found playground: " + dt);
+                // print("");
+                // print("found playground: " + dt);
             } else if (hasPlayground && playgroundIsNull)
             {
-                print("exit to menu: " + dt);
+                // print("exit to menu: " + dt);
             }
             hasPlayground = !playgroundIsNull;
 
@@ -71,7 +71,7 @@ namespace ZUtil
                     coloredMapName = Regex::Replace(coloredMapName, "\\$[wnoitsgzbWNMOITSGZB]", "");
                     coloredMapName = Regex::Replace(coloredMapName, "\\$", "\\$");
 
-                    print("found " + (isRoyalMap ? "royal" : "race") + " map: " + trimmedMapName);
+                    // print("found " + (isRoyalMap ? "royal" : "race") + " map: " + trimmedMapName);
                     for (uint i = 0; i < MapLoadEventCallbacks.Length ; i++)
                         MapLoadEventCallbacks[i](map, arena);
                 }
@@ -83,7 +83,7 @@ namespace ZUtil
                 if (!hasPlayer && !playerIsNull )
                 {
                     hasPlayer = true;
-                    print("found player: " + dt);
+                    // print("found player: " + dt);
                     for (uint i = 0; i < PlayerLoadEventCallbacks.Length ; i++)
                         PlayerLoadEventCallbacks[i](player);
                 }

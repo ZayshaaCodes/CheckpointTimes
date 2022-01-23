@@ -6,6 +6,43 @@ class CpRunData
     int position = 0;
     bool wasPB =false;
 
+    void Clear(){
+        for (uint i = 0; i < times.Length; i++)
+        {
+            times[0] = 0;
+            resets[0] = 0;
+            position = 0;
+            wasPB = false;
+        }
+    }
+
+    void FromJsonObject(Json::Value obj)
+    {
+        auto jsonTimes = obj["times"];
+        auto jsonResets = obj["resets"];
+
+        times.Resize(jsonTimes.Length);
+        resets.Resize(jsonResets.Length);
+
+        position = 0;
+
+        for (uint i = 0; i < jsonTimes.Length; i++)
+        {
+            times[i] = jsonTimes[i];
+            if (times[i] != 0)
+                position++;
+        }
+
+        for (uint i = 0; i < jsonResets.Length; i++)
+        {
+            resets[i] = jsonResets[i];
+        }
+
+        // position = obj["position"];
+        wasPB = obj["wasPB"];
+        // print(position);
+    }
+
     Json::Value ToJsonObject()
     {
         auto obj = Json::Object();

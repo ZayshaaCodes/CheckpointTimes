@@ -6,54 +6,103 @@ class CpTimesPanel : ZUtil::UiPanel
 {
     bool doScroll = false;
     Resources::Font@ g_font;
+    bool resizeWindow = false;
 
     CpTimesPanel()
     {
-        super("Checkpoint Times", CPTimesPanelPosition, vec2(380,100));
+        super("Checkpoint Times", TimePanel_position   , vec2(TimePanel_fontSize*19,100));
 
-        @g_font = Resources::GetFont("DroidSans-Bold.ttf",20);
+        @g_font = Resources::GetFont("DroidSans-Bold.ttf",TimePanel_fontSize);
         m_moveHud = true;
+        m_size.x = TimePanel_fontSize * 19; 
     }
     
-    // void OnSettingsChanged() override 
-    // {
-
-    // }
+    void OnSettingsChanged() override 
+    {
+        @g_font = Resources::GetFont("DroidSans-Bold.ttf",TimePanel_fontSize);
+        m_size.x = TimePanel_fontSize * 19;
+        m_size.y = GetWindowHeight();
+        resizeWindow = true;
+    }
 
     // void Update(float dt) override 
     // {
         
     // }
 
+    float GetWindowHeight(){
+        return Math::Min(g_cpDataManager.mapCpCount, TimePanel_maxLines) * (TimePanel_fontSize + 9)
+         + 2 * TimePanel_fontSize + 22;
+    }
+
     void Render() override 
     { 
-        if(!g_gameState.hasMap) return;
+        if(!g_gameState.hasMap || !TimePanel_visible) return;
+
+        if(GeneralSettings::HidePanelsWithInterface) {
+            auto playground = GetApp().CurrentPlayground;
+            if(playground is null || playground.Interface is null || Dev::GetOffsetUint32(playground.Interface, 0x1C) == 0) {
+            return;
+            }
+        }
+
+        float fSize = TimePanel_fontSize;
 
         // g_cpDataManager
-        UI::PushStyleColor(UI::Col::WindowBg, vec4(0,0,0,.4f));
-        UI::SetNextWindowPos(int(m_pos.x), int(m_pos.y));
-        UI::SetNextWindowSize(int(m_size.x), Math::Min(g_cpDataManager.mapCpCount, 8) * 29
-         + 35 + 25);
+        UI::PushStyleColor(UI::Col::WindowBg, TimePanel_bgColor);
+        // UI::SetNextWindowPos(int(TimePanel_position.x), int(TimePanel_position.y));
+        UI::SetNextWindowSize(int(m_size.x), int(GetWindowHeight()));
         UI::Begin("CP Times", UI::WindowFlags::NoTitleBar 
                     | UI::WindowFlags::NoCollapse 
                     | UI::WindowFlags::NoDocking);
-                    
+
+        if (resizeWindow)
+        {
+            UI::SetWindowSize(m_size);
+            resizeWindow = false;
+        }                    
 
         UI::PushFont(g_font);
 
         int currentCp = g_cpDataManager.currentCp;
 
-        UI::Text("\\$s" + g_gameState.coloredMapName + " | " +  currentCp + "/" + g_cpDataManager.mapCpCount);
+        UI::PushStyleColor(UI::Col::Button, vec4(0,0,0,.25f));
+        UI::Text("\\$s" + g_gameState.coloredMapName);// + " | " +  currentCp + "/" + g_cpDataManager.mapCpCount);
+        UI::SameLine();
+        UI::Dummy(vec2(5, fSize));
+        UI::SameLine();
+        auto cursorPos = UI::GetCursorPos();
+        if (UI::Button("", vec2(m_size.x-cursorPos.x - fSize * .75f, fSize))){
+            HistoryPanel_visible = !HistoryPanel_visible;
+        }
         
+        UI::PopStyleColor();
+        
+        if(UI::BeginTable("tableHeaders", 5, UI::TableFlags::SizingFixedFit)) 
+        {
+            UI::TableSetupColumn("\\$sCP", UI::TableColumnFlags::WidthFixed, fSize);
+            UI::TableSetupColumn("\\$sR", UI::TableColumnFlags::WidthFixed, fSize);
+            UI::TableSetupColumn("\\$sTime", UI::TableColumnFlags::WidthFixed, fSize*4);
+            UI::TableSetupColumn("\\$sSplit", UI::TableColumnFlags::WidthFixed, fSize* 4.5f);
+            UI::TableSetupColumn("\\$sBest", UI::TableColumnFlags::WidthFixed, fSize * 5.5f);
+            UI::TableHeadersRow();
+            UI::EndTable();
+        }
+
         UI::BeginChild("cpTimesList");
         if(UI::BeginTable("table", 5, UI::TableFlags::SizingFixedFit)) 
         {
-            UI::TableSetupColumn("\\$sCP", UI::TableColumnFlags::WidthFixed, 20);
-            UI::TableSetupColumn("\\$sR", UI::TableColumnFlags::WidthFixed, 20);
-            UI::TableSetupColumn("\\$sTime", UI::TableColumnFlags::WidthFixed, 80);
-            UI::TableSetupColumn("\\$sSplit", UI::TableColumnFlags::WidthFixed, 85);
-            UI::TableSetupColumn("\\$sBest", UI::TableColumnFlags::WidthFixed, 85);
-            UI::TableHeadersRow();
+            UI::TableSetupColumn("", UI::TableColumnFlags::DefaultHide , fSize);
+            UI::TableSetupColumn("", UI::TableColumnFlags::DefaultHide , fSize);
+            UI::TableSetupColumn("", UI::TableColumnFlags::DefaultHide , fSize*4);
+            UI::TableSetupColumn("", UI::TableColumnFlags::DefaultHide , fSize* 4.5f);
+            UI::TableSetupColumn("", UI::TableColumnFlags::DefaultHide , fSize * 5.5f);
+            // UI::TableSetupColumn("\\$sCP", UI::TableColumnFlags::WidthFixed, fSize);
+            // UI::TableSetupColumn("\\$sR", UI::TableColumnFlags::WidthFixed, fSize);
+            // UI::TableSetupColumn("\\$sTime", UI::TableColumnFlags::WidthFixed, fSize*4);
+            // UI::TableSetupColumn("\\$sSplit", UI::TableColumnFlags::WidthFixed, fSize* 4.5f);
+            // UI::TableSetupColumn("\\$sBest", UI::TableColumnFlags::WidthFixed, fSize * 5.5f);
+            // UI::TableHeadersRow();
 
             string color;
 
@@ -86,7 +135,7 @@ class CpTimesPanel : ZUtil::UiPanel
                 }
                 else if(int(i) >= currentCp) {
                     color = color_Dark;
-                    displayReset = 0;
+                    displayReset = g_cpDataManager.m_runHistory[0].resets[i];
                 } 
                 // else { 
                 //     string h = FloatToHex(fade);
@@ -105,8 +154,8 @@ class CpTimesPanel : ZUtil::UiPanel
                     
                 } else if(int(i) >= currentCp) {
                     color = color_Dark;
-                    // displayTime = lastTimes[i];
-                    displayTime = 0;
+                    displayTime = g_cpDataManager.m_runHistory[0].times[i];
+                    //displayTime = 0;
                 } 
                 // else {
                 //     string h = FloatToHex(fade);
@@ -122,8 +171,12 @@ class CpTimesPanel : ZUtil::UiPanel
 
                 bool pastCur = int(i) >= currentCp;
 
-                int split = pastCur ? 0 : g_cpDataManager.bestRun.times[i] - g_cpDataManager.currentRun.times[i];
-                if (pastCur) split = 0;
+                int activeTime =  (pastCur ? g_cpDataManager.m_runHistory[0].times[i] : g_cpDataManager.currentRun.times[i]);
+
+                int split = 0;
+                if (activeTime != 0)
+                    split = g_cpDataManager.bestRun.times[i] - activeTime;
+
 
                 string sColor;
                 if (split > 0) {
@@ -142,21 +195,21 @@ class CpTimesPanel : ZUtil::UiPanel
                 UI::TableNextColumn();
             }
 
-            // if (doScroll)
-            // {
-            //     float max = UI::GetScrollMaxY();
-            //     auto dist = Math::Max(currentCp - 3,0) / Math::Max(float( curTimes.Length  - 5),1.0f) * max;
-            //     UI::SetScrollY(dist);
-            //     doScroll = false;
-            // }
+            if (doScroll)
+            {
+                float max = UI::GetScrollMaxY();
+                auto dist = Math::Max(currentRun.position - 3,0) / Math::Max(float(g_cpDataManager.mapCpCount - 5),1.0f) * max;
+                UI::SetScrollY(dist);
+                doScroll = false;
+            }
 
-        UI::EndTable();
+            UI::EndTable();
         }
         UI::EndChild();
-
         UI::PopFont();
 
-        CPTimesPanelPosition = UI::GetWindowPos();
+        TimePanel_position = UI::GetWindowPos();
+        m_size = UI::GetWindowSize();
 
         UI::End();
         UI::PopStyleColor();

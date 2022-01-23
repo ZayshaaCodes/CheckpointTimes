@@ -88,7 +88,7 @@ namespace ZUtil
                 _cpCount++;
             }
         }
-        print("cps: " + _cpCount * lapCount);
+        // print("cps: " + _cpCount * lapCount);
         return _cpCount * lapCount;
 
     }

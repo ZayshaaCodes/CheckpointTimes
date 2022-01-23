@@ -4,64 +4,61 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
 
     CpRunData@ bestRun = CpRunData();
     CpRunData@ currentRun = CpRunData();
-    array<CpRunData> LastRunsData(0);
+    array<CpRunData> m_runHistory(0);
 
-    int currentCp = 0;
-    int mapCpCount = 0;
+    uint currentCp = 0;
+    uint mapCpCount = 0;
     int respawnsAtLastCP = 0;
 
     CpDataManager() {
-        LastRunsData.Resize(g_saveCount);
+        m_runHistory.Resize(GeneralSettings::historyCount);
+    }
+
+    void ResizeAllRundData(const int &in count){
+        bestRun.Resize(count);
+        currentRun.Resize(count);
+
+        for (uint i = 0; i < m_runHistory.Length; i++)
+            m_runHistory[i].Resize(count);
+    }
+
+    void ClearAllRunData(){
+        bestRun.Clear();
+        currentRun.Clear();
+        for (uint i = 0; i < m_runHistory.Length; i++)
+            m_runHistory[i].Clear();
     }
 
     void AppendRun(CpRunData@ run){
-        for (uint i = LastRunsData.Length - 1; i >= 1 ; i--)
+        for (uint i = m_runHistory.Length - 1; i >= 1 ; i--)
         {
-            LastRunsData[i] = LastRunsData[i - 1];
+            m_runHistory[i] = m_runHistory[i - 1];
         }
-        LastRunsData[0] = run;
+        m_runHistory[0] = run;
     }
 
     void OnSettingsChanged() 
     {
-        if (LastRunsData.Length != g_saveCount)
+        if (m_runHistory.Length != uint(GeneralSettings::historyCount))
         {
-            print("resize");
-            LastRunsData.Resize(g_saveCount);
-            for (uint i = 0; i < LastRunsData.Length; i++)
+            m_runHistory.Resize(GeneralSettings::historyCount);
+            for (uint i = 0; i < m_runHistory.Length; i++)
             {
-                LastRunsData[i].Resize(mapCpCount);
+                m_runHistory[i].Resize(mapCpCount);
             }
         }
     }
 
     void OnMapLoaded(CGameCtnChallenge@ map, CSmArena@ arena){
-        // print("Attempting to load data for: " + map.MapName);
-        //load Run Data From File
 
-        //LoadMapTimeData(map);
+        string trimmedName =  ZUtil::GetTrimmedMapName(map);
+        print("Attempting to load data for: " + trimmedName);
 
         mapCpCount = ZUtil::GetEffectiveCpCount(map, arena); 
-        bestRun.Resize(mapCpCount);
-        currentRun.Resize(mapCpCount);
-        for (uint i = 0; i < LastRunsData.Length; i++)
-        {
-            LastRunsData[i].Resize(mapCpCount);
-        }
+        ClearAllRunData();
+        ResizeAllRundData(mapCpCount);
 
-        // LastRunsData[0].times[0] = 1000;
-        // LastRunsData[0].times[1] = 2000;
-        // LastRunsData[0].times[2] = 3000;
-        // LastRunsData[0].times[3] = 4000;
-        // LastRunsData[0].times[4] = 5000;
-        
-        // LastRunsData[1].times[0] = 4000;
-        // LastRunsData[1].times[1] = 3000;
-        // LastRunsData[1].times[2] = 2000;
-        // LastRunsData[1].times[3] = 1000;
-        // LastRunsData[1].times[4] = 0000;
-        
-        // curTimesCount = lastTimesCount = splitTimesCount = bestTimesCount = 0;
+        LoadMapTimeData(map);
         currentCp = 0;
     }
 
@@ -101,14 +98,15 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
 
                 if (improvement)
                 {
-                    //print("New best!");
+                    print("New best!");
                     auto temp = bestRun;
                     @bestRun = currentRun;
                     @currentRun = temp;
                     
-                    SaveMapTimeData();
                 } 
                 currentRun.ClearAll();
+                
+                SaveMapTimeData();
             }
         }
     }
@@ -154,7 +152,7 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
         //         // SaveMapTimeData();
         //     }
         // }
-        // doScroll = true;
+        cpTimesPanel.doScroll = true;
         // startnew(FadeColorToWhite);
     }
     
@@ -171,9 +169,9 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
         auto obj = Json::Object();
         auto lastRunsArr = Json::Array();
 
-        for (uint i = 0; i < LastRunsData.Length; i++)
+        for (uint i = 0; i < m_runHistory.Length; i++)
         {
-            lastRunsArr.Add(LastRunsData[i].ToJsonObject());
+            lastRunsArr.Add(m_runHistory[i].ToJsonObject());
         }
 
         obj["FormatVer"] = Json::Value(1.0);
@@ -195,40 +193,54 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
         if (map is null) return;
 
         auto path = GetJsonSavePath(map);
-        auto oldPath = g_saveFolderPath + "\\" + map.MapInfo.MapUid + ".json";
-        
         string trimmedName =  ZUtil::GetTrimmedMapName(map);
         
         if (IO::FileExists(path))
         {
-            print("Loading best time data for: " + trimmedName);
-            LoadTimes(path);
+            auto data = Json::FromFile(path);
+
+            int fVer = 0;
+            if (data.HasKey("FormatVer"))
+                fVer = data["FormatVer"];
+
+            print("Loading data (" + fVer + ") :" + trimmedName + "");
+
+            if(fVer == 1) 
+            {
+                bestRun.FromJsonObject(data["BestRun"]);
+
+                auto runHistory = data["RunHistory"];
+                
+                uint historyCount = Math::Min(runHistory.Length, GeneralSettings::historyCount);
+                for (uint i = 0; i < historyCount; i++)
+                {
+                    m_runHistory[i].FromJsonObject(runHistory[i]);
+                }
+            } else if (fVer == 0){
+
+                //getBestRunData
+                auto times = data["BestTimes"];
+                auto resets = data["ResetCounts"];
+                
+                for (uint i = 0; i < times.Length; i++)
+                {
+                    bestRun.times[i] = times[i];
+                    if (times[i] != 0)
+                        bestRun.position++;
+                }
+
+                if(int(resets.GetType()) == 4)
+                {
+                    // print("found reset counts");
+                    for (uint i = 0; i < resets.Length; i++)
+                    {
+                        bestRun.resets[i] = resets[i];
+                    }
+                }
+            }
+
+
         } 
     }
 
-    void LoadTimes(string path){
-        // auto data = Json::FromFile(path);
-        // auto times`` = data["BestTimes"];
-        // auto resCounts = data["ResetCounts"];
-
-        // uint c = 0;
-        // for (uint i = 0; i < times.Length; i++)
-        // {
-        //     int thisTime = times[i];
-        //     if (thisTime != 0) c++;
-
-        //     bestTimes[i] = thisTime;
-        // }
-
-        // if(int(resCounts.GetType()) == 4)
-        // {
-        //     print("found reset counts");
-        //     for (uint i = 0; i < resCounts.Length; i++)
-        //     {
-        //         bestResetCounts[i] = resCounts[i];
-        //     }
-        // }
-
-        // return c;
-    }
 }

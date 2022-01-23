@@ -1,59 +1,68 @@
-
-
 CTrackMania@ g_app;
 string g_saveFolderPath;
-bool g_debugging = true;
+bool g_debugging = true; 
 
 array<ZUtil::PluginPanel@> _panels(0);
 
-ZUtil::CpEventManager@ g_cpEventManager;
-ZUtil::CpDataManager@ g_cpDataManager;
+CpDataManager@ g_cpDataManager;
+CpEventManager@ g_cpEventManager;
 ZUtil::GameState@ g_gameState;
 
 CpTimesPanel@ cpTimesPanel;
-CpTimesHistoryPanel@ cpTimesHistoryPanel;
+CpSplitHud@ cpSplitHud;
+CpTimesHistoryPanel@ cpHistoryPanel;
+
+string color_Dark = "\\$333";
+string color_Light = "\\$FFF";
 
 string color_DarkPos = "\\$272-";
-string color_LightPos = "\\$0D0-";
-string color_Dark = "\\$444";
-string color_Light = "\\$FFF";
 string color_DarkNeg = "\\$722+";
-string color_LightNeg = "\\$D00+";
+
+string color_LightPos = "\\$2D2-";
+string color_LightNeg = "\\$D22+";
 
 float g_dt;
+
+Dev::HookInfo@ hook;
 
 bool popup = true;
 
 void RenderMenu()
 {
-if (UI::MenuItem("\\$2f9" + Icons::PuzzlePiece + "\\$fff Cp Times History", selected: historyWindowVisible, enabled: GetApp().Editor !is null))
+    if (UI::MenuItem("\\$2f9" + Icons::PuzzlePiece + "\\$fff Cp Times", selected: TimePanel_visible, enabled: GetApp().Editor !is null))
 	{
-		historyWindowVisible = !historyWindowVisible;
+		TimePanel_visible = !TimePanel_visible;
+	}
+    if (UI::MenuItem("\\$2f9" + Icons::PuzzlePiece + "\\$fff Cp Times History", selected: HistoryPanel_visible, enabled: GetApp().Editor !is null))
+	{
+		HistoryPanel_visible = !HistoryPanel_visible;
 	}
 }
 
 void Main(){
     @g_app = cast<CTrackMania>(GetApp());
 
-    g_saveFolderPath = IO::FromDataFolder("CheckpointTimes2");
+    g_saveFolderPath = IO::FromDataFolder("CheckpointTimes");
     
     if(!IO::FolderExists(g_saveFolderPath)) IO::CreateFolder(g_saveFolderPath);
 
     @cpTimesPanel = CpTimesPanel();
-    @cpTimesHistoryPanel = CpTimesHistoryPanel();
+    @cpSplitHud = CpSplitHud();
+    @cpHistoryPanel = CpTimesHistoryPanel();
 
-    @g_cpEventManager = ZUtil::CpEventManager();
     @g_cpDataManager = CpDataManager();
+    @g_cpEventManager = CpEventManager();
+
     @g_gameState = ZUtil::GameState();
 
-    g_cpEventManager.RegisterCallbacks(g_cpDataManager);
+    g_cpEventManager.RegisterCallbacks(g_cpDataManager);    
+    g_cpEventManager.RegisterCallbacks(cpSplitHud);    
     g_gameState.RegisterLoadCallbacks(g_cpDataManager);
-
-    // g_gameState.RegisterLoadCallbacks(cpTimesPanel);
-    // g_gameState.RegisterLoadCallbacks(cpTimesHistoryPanel);
+    g_gameState.RegisterLoadCallbacks(cpSplitHud);
 
     _panels.InsertLast(cpTimesPanel);
-    _panels.InsertLast(cpTimesHistoryPanel);
+    _panels.InsertLast(cpSplitHud);
+    _panels.InsertLast(cpHistoryPanel);
     
     // if (g_debugging)
     // {
@@ -62,11 +71,18 @@ void Main(){
     // }
 
     print("Cp Times Initialized!");
+}
 
+void Test(uint r12){
+    print("test" + r12);
 }
 
 void OnDestroyed(){
-  
+    print("OnDestroyed");
+    if (hook !is null)
+    {
+        Dev::Unhook(hook);
+    }
 }
 
 void Update(float dt)
@@ -75,30 +91,24 @@ void Update(float dt)
     g_gameState.Update(dt);
     g_cpEventManager.Update(g_gameState.player);
 
-    for (uint i = 0; i < _panels.Length; i++) 
-        _panels[i].Update(dt);
+    for (uint i = 0; i < _panels.Length; i++) _panels[i].Update(dt);
 }
 
 void Render()
 {
-    //g_cpEventManager.Render(g_gameState.player);
-    for (uint i = 0; i < _panels.Length; i++) 
-        _panels[i].InternalRender();
+    //g_cpDataManager.Render(g_gameState.player);
+    for (uint i = 0; i < _panels.Length; i++) _panels[i].InternalRender();
 }
 
 
 void OnSettingsChanged(){
-    for (uint i = 0; i < _panels.Length; i++) 
-        _panels[i].OnSettingsChanged();
-
-    g_cpDataManager.OnSettingsChanged();
+    for (uint i = 0; i < _panels.Length; i++) _panels[i].OnSettingsChanged();
 }
 
 
 void RenderInterface()
 {
-    for (uint i = 0; i < _panels.Length; i++) 
-        _panels[i].RenderInterface();
+    for (uint i = 0; i < _panels.Length; i++) _panels[i].RenderInterface();
 }
 
 
@@ -130,4 +140,3 @@ void FadeColorToWhite(){
         yield();
     }
 }
-
