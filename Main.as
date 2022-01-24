@@ -39,6 +39,18 @@ void RenderMenu()
 	}
 }
 
+[Setting category="Advanced Settings"]
+void RenderSettings(){
+    // AdvSettings::Render(speeder);
+    if (g_gameState.hasMap)
+    {
+        if (UI::Button("Clear Current Map Data")){
+            g_cpDataManager.ClearMapData();
+        }
+    }
+
+}
+
 void Main(){
     @g_app = cast<CTrackMania>(GetApp());
 

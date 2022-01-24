@@ -9,8 +9,8 @@ class CpRunData
     void Clear(){
         for (uint i = 0; i < times.Length; i++)
         {
-            times[0] = 0;
-            resets[0] = 0;
+            times[i] = 0;
+            resets[i] = 0;
             position = 0;
             wasPB = false;
         }

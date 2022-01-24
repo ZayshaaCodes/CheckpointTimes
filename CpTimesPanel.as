@@ -67,7 +67,7 @@ class CpTimesPanel : ZUtil::UiPanel
         int currentCp = g_cpDataManager.currentCp;
 
         UI::PushStyleColor(UI::Col::Button, vec4(0,0,0,.25f));
-        UI::Text("\\$s" + g_gameState.coloredMapName);// + " | " +  currentCp + "/" + g_cpDataManager.mapCpCount);
+        UI::Text("\\$s" + g_gameState.coloredMapName + " | " + currentCp);// + " | " +  currentCp + "/" + g_cpDataManager.mapCpCount);
         UI::SameLine();
         UI::Dummy(vec2(5, fSize));
         UI::SameLine();
@@ -97,12 +97,6 @@ class CpTimesPanel : ZUtil::UiPanel
             UI::TableSetupColumn("", UI::TableColumnFlags::DefaultHide , fSize*4);
             UI::TableSetupColumn("", UI::TableColumnFlags::DefaultHide , fSize* 4.5f);
             UI::TableSetupColumn("", UI::TableColumnFlags::DefaultHide , fSize * 5.5f);
-            // UI::TableSetupColumn("\\$sCP", UI::TableColumnFlags::WidthFixed, fSize);
-            // UI::TableSetupColumn("\\$sR", UI::TableColumnFlags::WidthFixed, fSize);
-            // UI::TableSetupColumn("\\$sTime", UI::TableColumnFlags::WidthFixed, fSize*4);
-            // UI::TableSetupColumn("\\$sSplit", UI::TableColumnFlags::WidthFixed, fSize* 4.5f);
-            // UI::TableSetupColumn("\\$sBest", UI::TableColumnFlags::WidthFixed, fSize * 5.5f);
-            // UI::TableHeadersRow();
 
             string color;
 
@@ -127,71 +121,89 @@ class CpTimesPanel : ZUtil::UiPanel
                 }
                 UI::TableNextColumn();
 
-                // Current Resets Text
+                
                 int displayReset = 0;
-                if(int(i) < currentCp) {
-                    color = color_Light;
-                    displayReset =  g_cpDataManager.currentRun.resets[i];
+                if (g_gameState.isRoyalMap){
+                    int time = g_cpDataManager.currentRun.times[i];
+                    if(time != 0) {
+                        color = color_Light;
+                    } else {
+                        color = color_Dark;
+                    }
+                } else {
+                    // Current Resets Text
+                    if(int(i) < currentCp) {
+                        color = color_Light;
+                        displayReset =  g_cpDataManager.currentRun.resets[i];
+                    }
+                    else if(int(i) >= currentCp) {
+                        color = color_Dark;
+                        displayReset = g_cpDataManager.m_runHistory[0].resets[i];
+                    } 
                 }
-                else if(int(i) >= currentCp) {
-                    color = color_Dark;
-                    displayReset = g_cpDataManager.m_runHistory[0].resets[i];
-                } 
-                // else { 
-                //     string h = FloatToHex(fade);
-                //     color = "\\$" + h + "f" + h;
-                //     displayReset = g_cpDataManager.currentRun.resets[i];                    
-                // }
+               
 
                 UI::Text("\\$s" + color + displayReset);
                 UI::TableNextColumn();
 
                 // Current/Last Time Text
                 int displayTime = 0;
-                if(int(i) < currentCp) {
+                int curTime = currentRun.times[i];
+                int lastTime = g_cpDataManager.m_runHistory[0].times[i];
+
+                if(int(i) < currentCp || (g_gameState.isRoyalMap && curTime != 0)) {
                     color = color_Light;
-                    displayTime = currentRun.times[i];
+                    displayTime = curTime;
                     
                 } else if(int(i) >= currentCp) {
                     color = color_Dark;
-                    displayTime = g_cpDataManager.m_runHistory[0].times[i];
-                    //displayTime = 0;
+                    displayTime = lastTime;
                 } 
-                // else {
-                //     string h = FloatToHex(fade);
-                //     color = "\\$" + h + "f" + h;
-                //     displayTime = curTimes[i];
-                // }
+
                 UI::Text( "\\$s" + color + (displayTime == 0 ? "" : Time::Format( displayTime )));
                 UI::TableNextColumn();
                 
                 // Split Time Text
-
-                int pos = currentRun.position;
-
-                bool pastCur = int(i) >= currentCp;
-
-                int activeTime =  (pastCur ? g_cpDataManager.m_runHistory[0].times[i] : g_cpDataManager.currentRun.times[i]);
-
                 int split = 0;
-                if (activeTime != 0)
-                    split = g_cpDataManager.bestRun.times[i] - activeTime;
-
-
                 string sColor;
-                if (split > 0) {
-                    sColor = pastCur ? color_DarkPos : color_LightPos;
-                } else if (split < 0){
-                    sColor = pastCur ? color_DarkNeg : color_LightNeg;
-                } else{
+                bool splitActive = false;
+                
+                //if it's a normal map, if the current cp count is greater than the currently drawing index
+                // show the split between the current run and the best run
+                // otherwise show the split between best run and the last run in the history;
+                if (!g_gameState.isRoyalMap){
+                    bool pastCur = int(i) > currentCp;
+                    int activeTime =  (pastCur ? g_cpDataManager.m_runHistory[0].times[i] : g_cpDataManager.currentRun.times[i]);
+
+                    if (activeTime != 0)
+                        split = g_cpDataManager.bestRun.times[i] - activeTime;
+                } else {// if it's a royal map, show a split if there's a current time and a beset time for this cp
+                    if (g_cpDataManager.currentRun.times[i] != 0 && g_cpDataManager.bestRun.times[i] != 0)
+                    {
+                        split = g_cpDataManager.bestRun.times[i] - g_cpDataManager.currentRun.times[i];
+                        splitActive = true;
+                    }
+                }
+
+                if (split > 0)
+                    sColor = splitActive ? color_LightPos : color_DarkPos;
+                else if (split < 0)
+                    sColor = splitActive ? color_LightNeg : color_DarkNeg;
+                 else
                     sColor = color_Dark;
-                }                
-                UI::Text("\\$s" + sColor + Time::Format( Math::Abs(split)) ); 
+
+                UI::Text("\\$s" + sColor + Time::Format( Math::Abs(split))); 
                 UI::TableNextColumn();
 
                 // Best Time Text
                 int bestTime = g_cpDataManager.bestRun.times[i];
-                UI::Text("\\$s" + (bestTime == 0 ? "" : g_cpDataManager.bestRun.resets[i] + " - " + Time::Format(bestTime)));
+                if (!g_gameState.isRoyalMap)
+                {
+                    UI::Text("\\$s" + (bestTime == 0 ? "" : g_cpDataManager.bestRun.resets[i] + " - " + Time::Format(bestTime)));
+                } else {
+                    UI::Text("\\$s" + (bestTime == 0 ? "" : Time::Format(bestTime)));
+                }
+                
                 UI::TableNextColumn();
             }
 

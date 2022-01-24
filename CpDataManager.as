@@ -66,15 +66,24 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
         
     }
 
+    void ClearMapData(){
+        bestRun.Clear();
+        currentRun.Clear();
+        for (uint i = 0; i < m_runHistory.Length; i++)
+        {
+            m_runHistory[i].Clear();
+        }
+        SaveMapTimeData();
+    }
 
     void OnCpTimesCountChangeEvent(int newCp)
     {   
-        currentCp = newCp + 1;
         if (!g_gameState.isRoyalMap)
         {
+            currentCp = newCp + 1;
             if (newCp == -1)
             {
-                //print("Restart!");
+                print("Restart!");
 
                 respawnsAtLastCP = 0;
 
@@ -113,7 +122,7 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
 
     void OnCPNewTimeEvent(int i, int newTime)
     {
-        //print("new time: " +  i + " : " + newTime);
+
         if (newTime < 0)
         {
             print("invalid time: " + newTime);
@@ -131,27 +140,31 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
             currentRun.position++;
 
             respawnsAtLastCP = resCount;     
-        } 
-        
-        // else {
-        //     auto curLmIndex = g_gameState.player.CurrentLaunchedRespawnLandmarkIndex;
-        //     auto curLandmark = g_gameState.arena.MapLandmarks[curLmIndex];
-        //     // print( tostring(curLandmark.Order - 1));
+        } else { // royal map
+            auto curLmIndex = g_gameState.player.CurrentLaunchedRespawnLandmarkIndex;
+            auto curLandmark = g_gameState.arena.MapLandmarks[curLmIndex];
 
-        //     currentCp = curLandmark.Order - 1;
-        //     if (currentCp > 4) currentCp = 4;
-        //     splitTimesCount = currentCp;
+            int timeIndex = curLandmark.Order - 1;
+            // print("new time: " + timeIndex + " : " + newTime);
 
-        //     curTimes[currentCp] = newTime;
-        //     currentRun.count++;
-        //     splitTimes[currentCp] = int(bestTimes[currentCp]) - newTime;
-        //     if (curTimes[currentCp] < bestTimes[currentCp] || bestTimes[currentCp] == 0)
-        //     {
-        //         bestTimes[currentCp] = curTimes[currentCp];
-        //         bestResetCounts[currentCp] = resetCounts[currentCp];
-        //         // SaveMapTimeData();
-        //     }
-        // }
+            int oldTime = currentRun.times[timeIndex];
+            if (oldTime != 0)
+            {
+                m_runHistory[0].times[timeIndex] = oldTime;
+            }
+
+            currentRun.times[timeIndex] = newTime;
+            
+            if (currentRun.times[timeIndex] < bestRun.times[timeIndex] || bestRun.times[timeIndex] == 0)
+            {
+                bestRun.times[timeIndex] = currentRun.times[timeIndex];
+                bestRun.resets[timeIndex] = currentRun.resets[timeIndex];
+                SaveMapTimeData();
+            }
+
+
+        }
+
         cpTimesPanel.doScroll = true;
         // startnew(FadeColorToWhite);
     }
