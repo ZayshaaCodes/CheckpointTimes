@@ -1,7 +1,3 @@
-// [Setting]
-// float g_fontSize = 20;
-
-
 class CpTimesPanel : ZUtil::UiPanel
 {
     bool doScroll = false;
@@ -75,16 +71,16 @@ class CpTimesPanel : ZUtil::UiPanel
         if (UI::Button("", vec2(m_size.x-cursorPos.x - fSize * .75f, fSize))){
             HistoryPanel_visible = !HistoryPanel_visible;
         }
-        
+
         UI::PopStyleColor();
         
         if(UI::BeginTable("tableHeaders", 5, UI::TableFlags::SizingFixedFit)) 
         {
-            UI::TableSetupColumn("\\$sCP", UI::TableColumnFlags::WidthFixed, fSize);
-            UI::TableSetupColumn("\\$sR", UI::TableColumnFlags::WidthFixed, fSize);
-            UI::TableSetupColumn("\\$sTime", UI::TableColumnFlags::WidthFixed, fSize*4);
-            UI::TableSetupColumn("\\$sSplit", UI::TableColumnFlags::WidthFixed, fSize* 4.5f);
-            UI::TableSetupColumn("\\$sBest", UI::TableColumnFlags::WidthFixed, fSize * 5.5f);
+            UI::TableSetupColumn("\\$s#",    UI::TableColumnFlags::WidthFixed, fSize);
+            UI::TableSetupColumn("\\$sR",     UI::TableColumnFlags::WidthFixed, fSize);
+            UI::TableSetupColumn("\\$sTime",  UI::TableColumnFlags::WidthFixed, fSize * 4);
+            UI::TableSetupColumn("\\$sSplit", UI::TableColumnFlags::WidthFixed, fSize * 4.5f);
+            UI::TableSetupColumn("\\$sBest",  UI::TableColumnFlags::WidthFixed, fSize * 5.5f);
             UI::TableHeadersRow();
             UI::EndTable();
         }
@@ -92,11 +88,11 @@ class CpTimesPanel : ZUtil::UiPanel
         UI::BeginChild("cpTimesList");
         if(UI::BeginTable("table", 5, UI::TableFlags::SizingFixedFit)) 
         {
-            UI::TableSetupColumn("", UI::TableColumnFlags::DefaultHide , fSize);
-            UI::TableSetupColumn("", UI::TableColumnFlags::DefaultHide , fSize);
-            UI::TableSetupColumn("", UI::TableColumnFlags::DefaultHide , fSize*4);
-            UI::TableSetupColumn("", UI::TableColumnFlags::DefaultHide , fSize* 4.5f);
-            UI::TableSetupColumn("", UI::TableColumnFlags::DefaultHide , fSize * 5.5f);
+            UI::TableSetupColumn("", UI::TableColumnFlags::WidthFixed, fSize);
+            UI::TableSetupColumn("", UI::TableColumnFlags::WidthFixed, fSize);
+            UI::TableSetupColumn("", UI::TableColumnFlags::WidthFixed, fSize * 4);
+            UI::TableSetupColumn("", UI::TableColumnFlags::WidthFixed, fSize * 4.5f);
+            UI::TableSetupColumn("", UI::TableColumnFlags::WidthFixed, fSize * 5.5f);
 
             string color;
 
@@ -119,6 +115,7 @@ class CpTimesPanel : ZUtil::UiPanel
                 } else {
                     UI::Text( "\\$s" + (i == g_cpDataManager.mapCpCount - 1 ? "F" : tostring(i + 1)) ); 
                 }
+
                 UI::TableNextColumn();
 
                 
@@ -146,7 +143,7 @@ class CpTimesPanel : ZUtil::UiPanel
                 UI::Text("\\$s" + color + displayReset);
                 UI::TableNextColumn();
 
-                // Current/Last Time Text
+                // --------- Current/Last Time Text
                 int displayTime = 0;
                 int curTime = currentRun.times[i];
                 int lastTime = g_cpDataManager.m_runHistory[0].times[i];
@@ -163,7 +160,7 @@ class CpTimesPanel : ZUtil::UiPanel
                 UI::Text( "\\$s" + color + (displayTime == 0 ? "" : Time::Format( displayTime )));
                 UI::TableNextColumn();
                 
-                // Split Time Text
+                // -------Split Time Text
                 int split = 0;
                 string sColor;
                 bool splitActive = false;
@@ -172,9 +169,9 @@ class CpTimesPanel : ZUtil::UiPanel
                 // show the split between the current run and the best run
                 // otherwise show the split between best run and the last run in the history;
                 if (!g_gameState.isRoyalMap){
-                    bool pastCur = int(i) > currentCp;
+                    bool pastCur = int(i) >= currentCp;
                     int activeTime =  (pastCur ? g_cpDataManager.m_runHistory[0].times[i] : g_cpDataManager.currentRun.times[i]);
-
+                    splitActive = !pastCur;
                     if (activeTime != 0)
                         split = g_cpDataManager.bestRun.times[i] - activeTime;
                 } else {// if it's a royal map, show a split if there's a current time and a beset time for this cp
