@@ -1,214 +1,104 @@
-// [Setting]
-// float g_fontSize = 20;
-
-class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGameStateEvents
+class CpTimesPanel : ZUtil::UiPanel
 {
-    // Todo: convert this to a single array of int3's
-    // could either combine cur and last time 
-    // or calc split times as it's displayed.
-    array<int> curTimes(0);
-    array<int> lastTimes(0);
-    array<int> bestTimes(0);
-    array<int> splitTimes(0);
-    array<int> resetCounts(0);
-    array<int> lastResetCounts(0);
-    array<int> bestResetCounts(0);
-    // storing the count independently from array size
-    // in order to make all checkpoint indexes valid
-    int curTimesCount;
-    int lastTimesCount;
-    int bestTimesCount;
-    int splitTimesCount;
-
-    int currentCp = -1;
     bool doScroll = false;
-
-    int respawnsAtLastCP = 0;
-
     Resources::Font@ g_font;
+    bool resizeWindow = false;
 
     CpTimesPanel()
     {
-        super("Checkpoint Times", CPTimesPanelPosition, vec2(380,100));
+        super("Checkpoint Times", TimePanel_position   , vec2(TimePanel_fontSize*19,100));
 
-        @g_font = Resources::GetFont("DroidSans-Bold.ttf",20);
+        @g_font = Resources::GetFont("DroidSans-Bold.ttf",TimePanel_fontSize);
         m_moveHud = true;
+        m_size.x = TimePanel_fontSize * 19; 
     }
     
-    void OnMapLoaded(CGameCtnChallenge@ map, CSmArena@ arena){
-        // already detects if it's royal
-
-        
-        auto newCount = ZUtil::GetEffectiveCpCount(map, arena); 
-            curTimes.Resize(newCount);
-            lastTimes.Resize(newCount);
-            bestTimes.Resize(newCount);
-            splitTimes.Resize(newCount);
-            resetCounts.Resize(newCount);
-            lastResetCounts.Resize(newCount);
-            bestResetCounts.Resize(newCount);
-
-        Clear(curTimes);
-        Clear(lastTimes);
-        Clear(bestTimes);
-        Clear(splitTimes);
-        Clear(resetCounts);
-        Clear(lastResetCounts);
-        Clear(bestResetCounts);
-        
-        curTimesCount = lastTimesCount = splitTimesCount = bestTimesCount = 0;
-        currentCp = -1;
-
-        LoadMapTimeData();
-    }
-
-    void Clear(array<int>@ arr){
-        for (uint i = 0; i < arr.Length; i++) arr[i] = 0;
-    }
-
-    void OnPlayerLoaded(CSmPlayer@ player){
-        // print("OnPlayerLoaded");
-    }
-
-    void OnCpTimesCountChangeEvent(int newCp)
-    {   
-        if (!g_gameState.isRoyalMap)
-        {
-            currentCp = newCp;
-            if (currentCp == -1)
-            {
-                // print("Restart!");
-                bool improvement = false;
-
-                if (curTimesCount > bestTimesCount){
-                    improvement =  true;
-                } 
-
-                // if we've reached the same CP, 
-                // and current time is higher, yay!
-                else if ((bestTimesCount == curTimesCount) 
-                        && (curTimesCount >= 0)
-                        && (curTimes[curTimesCount - 1] < bestTimes[curTimesCount - 1]) ){
-                    improvement =  true;
-                }
-
-
-                for (uint i = 0; i < curTimes.Length; i++)
-                {  
-                    lastTimes[i] = curTimes[i];
-                    lastResetCounts[i] = resetCounts[i];
-                    lastTimesCount = curTimesCount;
-                    
-                    curTimes[i] = 0;
-                    resetCounts[i] = 0;
-                    if (int(i) >= curTimesCount )
-                    {
-                        splitTimes[i] = 0;
-                    }
-                }
-                curTimesCount = 0;
-                respawnsAtLastCP = 0;
-                if (improvement)
-                {
-                    print("New best! saving :)");
-                    for (uint i = 0; i < lastTimes.Length; i++)
-                    {
-                        bestTimes[i] = lastTimes[i];
-                        bestResetCounts[i] = lastResetCounts[i];
-                        bestTimesCount = lastTimesCount;
-                        // print("" + bestTimes[i]);
-                    }
-                    SaveMapTimeData();
-                }
-            }
-        }
-    }
-
-
-    void OnCPNewTimeEvent(int i, int newTime)
+    void OnSettingsChanged() override 
     {
-        if (newTime < 0)
-        {
-            print("invalid time: " + newTime);
-            return;
-        }
-        
-        if (!g_gameState.isRoyalMap)
-        {
-            auto resCount = g_gameState.player.Score.NbRespawnsRequested;
-
-            //print(resCount - respawnsAtLastCP);
-
-            curTimes[i] = newTime;
-            resetCounts[i] = resCount - respawnsAtLastCP;
-            curTimesCount++;
-            splitTimes[i] = int(bestTimes[i]) - newTime;
-            splitTimesCount++;     
-
-            respawnsAtLastCP = resCount;     
-        } else {
-            auto curLmIndex = g_gameState.player.CurrentLaunchedRespawnLandmarkIndex;
-            auto curLandmark = g_gameState.arena.MapLandmarks[curLmIndex];
-            // print( tostring(curLandmark.Order - 1));
-
-            currentCp = curLandmark.Order - 1;
-            if (currentCp > 4) currentCp = 4;
-            splitTimesCount = currentCp;
-
-            curTimes[currentCp] = newTime;
-            curTimesCount++;
-            splitTimes[currentCp] = int(bestTimes[currentCp]) - newTime;
-            if (curTimes[currentCp] < bestTimes[currentCp] || bestTimes[currentCp] == 0)
-            {
-                bestTimes[currentCp] = curTimes[currentCp];
-                bestResetCounts[currentCp] = resetCounts[currentCp];
-                SaveMapTimeData();
-            }
-        }
-        doScroll = true;
-        startnew(FadeColorToWhite);
+        @g_font = Resources::GetFont("DroidSans-Bold.ttf",TimePanel_fontSize);
+        m_size.x = TimePanel_fontSize * 19;
+        m_size.y = GetWindowHeight();
+        resizeWindow = true;
     }
-    
-    // void OnSettingsChanged() override 
-    // {
-
-    // }
 
     // void Update(float dt) override 
     // {
         
     // }
 
+    float GetWindowHeight(){
+        return Math::Min(g_cpDataManager.mapCpCount, TimePanel_maxLines) * (TimePanel_fontSize + 9)
+         + 2 * TimePanel_fontSize + 22;
+    }
+
     void Render() override 
     { 
-        if(!g_gameState.hasMap) return;
+        if(!g_gameState.hasMap || !TimePanel_visible) return;
 
-        UI::PushStyleColor(UI::Col::WindowBg, vec4(0,0,0,.4f));
-        UI::SetNextWindowPos(int(m_pos.x), int(m_pos.y));
-        UI::SetNextWindowSize(int(m_size.x), Math::Min(curTimes.Length, 8) * 29
-         + 35 + 25);
+        if(GeneralSettings::HidePanelsWithInterface) {
+            auto playground = GetApp().CurrentPlayground;
+            if(playground is null || playground.Interface is null || Dev::GetOffsetUint32(playground.Interface, 0x1C) == 0) {
+            return;
+            }
+        }
+
+        float fSize = TimePanel_fontSize;
+
+        // g_cpDataManager
+        UI::PushStyleColor(UI::Col::WindowBg, TimePanel_bgColor);
+        // UI::SetNextWindowPos(int(TimePanel_position.x), int(TimePanel_position.y));
+        UI::SetNextWindowSize(int(m_size.x), int(GetWindowHeight()));
         UI::Begin("CP Times", UI::WindowFlags::NoTitleBar 
                     | UI::WindowFlags::NoCollapse 
                     | UI::WindowFlags::NoDocking);
-                    
+
+        if (resizeWindow)
+        {
+            UI::SetWindowSize(m_size);
+            resizeWindow = false;
+        }                    
 
         UI::PushFont(g_font);
 
-        UI::Text("\\$s" + g_gameState.coloredMapName);
+        int currentCp = g_cpDataManager.currentCp;
+
+        UI::PushStyleColor(UI::Col::Button, vec4(0,0,0,.25f));
+        UI::Text("\\$s" + g_gameState.coloredMapName + " | " + currentCp);// + " | " +  currentCp + "/" + g_cpDataManager.mapCpCount);
+        UI::SameLine();
+        UI::Dummy(vec2(5, fSize));
+        UI::SameLine();
+        auto cursorPos = UI::GetCursorPos();
+        if (UI::Button("", vec2(m_size.x-cursorPos.x - fSize * .75f, fSize))){
+            HistoryPanel_visible = !HistoryPanel_visible;
+        }
+
+        UI::PopStyleColor();
         
+        if(UI::BeginTable("tableHeaders", 5, UI::TableFlags::SizingFixedFit)) 
+        {
+            UI::TableSetupColumn("\\$s#",    UI::TableColumnFlags::WidthFixed, fSize);
+            UI::TableSetupColumn("\\$sR",     UI::TableColumnFlags::WidthFixed, fSize);
+            UI::TableSetupColumn("\\$sTime",  UI::TableColumnFlags::WidthFixed, fSize * 4);
+            UI::TableSetupColumn("\\$sSplit", UI::TableColumnFlags::WidthFixed, fSize * 4.5f);
+            UI::TableSetupColumn("\\$sBest",  UI::TableColumnFlags::WidthFixed, fSize * 5.5f);
+            UI::TableHeadersRow();
+            UI::EndTable();
+        }
+
         UI::BeginChild("cpTimesList");
         if(UI::BeginTable("table", 5, UI::TableFlags::SizingFixedFit)) 
         {
-            UI::TableSetupColumn("\\$sCP", UI::TableColumnFlags::WidthFixed, 20);
-            UI::TableSetupColumn("\\$sR", UI::TableColumnFlags::WidthFixed, 20);
-            UI::TableSetupColumn("\\$sTime", UI::TableColumnFlags::WidthFixed, 80);
-            UI::TableSetupColumn("\\$sSplit", UI::TableColumnFlags::WidthFixed, 85);
-            UI::TableSetupColumn("\\$sBest", UI::TableColumnFlags::WidthFixed, 85);
-            UI::TableHeadersRow();
+            UI::TableSetupColumn("", UI::TableColumnFlags::WidthFixed, fSize);
+            UI::TableSetupColumn("", UI::TableColumnFlags::WidthFixed, fSize);
+            UI::TableSetupColumn("", UI::TableColumnFlags::WidthFixed, fSize * 4);
+            UI::TableSetupColumn("", UI::TableColumnFlags::WidthFixed, fSize * 4.5f);
+            UI::TableSetupColumn("", UI::TableColumnFlags::WidthFixed, fSize * 5.5f);
 
             string color;
 
-            for (uint i = 0; i < curTimes.Length; i++)
+            auto currentRun = g_cpDataManager.currentRun;
+
+            for (uint i = 0; i < g_cpDataManager.mapCpCount; i++)
             {
                 UI::TableNextRow();
                 UI::TableNextColumn();
@@ -223,81 +113,112 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
                     else if (i == 4) letter = "\\$s\\$888B";
                     UI::Text( letter ); UI::NextColumn();
                 } else {
-                    UI::Text( "\\$s" + (i == curTimes.Length - 1 ? "F" : tostring(i + 1)) ); 
+                    UI::Text( "\\$s" + (i == g_cpDataManager.mapCpCount - 1 ? "F" : tostring(i + 1)) ); 
                 }
+
                 UI::TableNextColumn();
 
-                // Best Time Text
+                
                 int displayReset = 0;
-
-                if(int(i) == currentCp) {
-                    string h = FloatToHex(fade);
-                    color = "\\$" + h + "f" + h;
-                    displayReset = resetCounts[i];
-                }
-                else if(int(i) > currentCp) {
-                    color = color_Dark;
-                    displayReset = lastResetCounts[i];
+                if (g_gameState.isRoyalMap){
+                    int time = g_cpDataManager.currentRun.times[i];
+                    if(time != 0) {
+                        color = color_Light;
+                    } else {
+                        color = color_Dark;
+                    }
                 } else {
-                    color = color_Light;
-                    displayReset = resetCounts[i];
+                    // Current Resets Text
+                    if(int(i) < currentCp) {
+                        color = color_Light;
+                        displayReset =  g_cpDataManager.currentRun.resets[i];
+                    }
+                    else if(int(i) >= currentCp) {
+                        color = color_Dark;
+                        displayReset = g_cpDataManager.m_runHistory[0].resets[i];
+                    } 
                 }
+               
 
                 UI::Text("\\$s" + color + displayReset);
                 UI::TableNextColumn();
 
-                // Current/Last Time Text
+                // --------- Current/Last Time Text
                 int displayTime = 0;
-                if(int(i) == currentCp) {
-                    string h = FloatToHex(fade);
-                    color = "\\$" + h + "f" + h;
-                    displayTime = curTimes[i];
-                }
-                else if(int(i) > currentCp) {
-                    color = color_Dark;
-                    displayTime = lastTimes[i];
-                } else {
+                int curTime = currentRun.times[i];
+                int lastTime = g_cpDataManager.m_runHistory[0].times[i];
+
+                if(int(i) < currentCp || (g_gameState.isRoyalMap && curTime != 0)) {
                     color = color_Light;
-                    displayTime = curTimes[i];
-                }
+                    displayTime = curTime;
+                    
+                } else if(int(i) >= currentCp) {
+                    color = color_Dark;
+                    displayTime = lastTime;
+                } 
+
                 UI::Text( "\\$s" + color + (displayTime == 0 ? "" : Time::Format( displayTime )));
                 UI::TableNextColumn();
                 
-                auto split = splitTimes[i];
-                bool pastCur = int(i) > currentCp;
+                // -------Split Time Text
+                int split = 0;
                 string sColor;
-                if (split > 0) {
-                    sColor = pastCur ? color_DarkPos : color_LightPos;
-                } else if (split < 0){
-                    sColor = pastCur ? color_DarkNeg : color_LightNeg;
-                } else{
-                    sColor = color_Dark;
-                }
+                bool splitActive = false;
                 
-                // Split Time Text
-                UI::Text("\\$s" + sColor + Time::Format( Math::Abs(splitTimes[i])) ); 
+                //if it's a normal map, if the current cp count is greater than the currently drawing index
+                // show the split between the current run and the best run
+                // otherwise show the split between best run and the last run in the history;
+                if (!g_gameState.isRoyalMap){
+                    bool pastCur = int(i) >= currentCp;
+                    int activeTime =  (pastCur ? g_cpDataManager.m_runHistory[0].times[i] : g_cpDataManager.currentRun.times[i]);
+                    splitActive = !pastCur;
+                    if (activeTime != 0)
+                        split = g_cpDataManager.bestRun.times[i] - activeTime;
+                } else {// if it's a royal map, show a split if there's a current time and a beset time for this cp
+                    if (g_cpDataManager.currentRun.times[i] != 0 && g_cpDataManager.bestRun.times[i] != 0)
+                    {
+                        split = g_cpDataManager.bestRun.times[i] - g_cpDataManager.currentRun.times[i];
+                        splitActive = true;
+                    }
+                }
+
+                if (split > 0)
+                    sColor = splitActive ? color_LightPos : color_DarkPos;
+                else if (split < 0)
+                    sColor = splitActive ? color_LightNeg : color_DarkNeg;
+                 else
+                    sColor = color_Dark;
+
+                UI::Text("\\$s" + sColor + Time::Format( Math::Abs(split))); 
                 UI::TableNextColumn();
 
                 // Best Time Text
-                UI::Text("\\$s" + (bestTimes[i] == 0 ? "" : bestResetCounts[i] + " - " + Time::Format(bestTimes[i])));
+                int bestTime = g_cpDataManager.bestRun.times[i];
+                if (!g_gameState.isRoyalMap)
+                {
+                    UI::Text("\\$s" + (bestTime == 0 ? "" : g_cpDataManager.bestRun.resets[i] + " - " + Time::Format(bestTime)));
+                } else {
+                    UI::Text("\\$s" + (bestTime == 0 ? "" : Time::Format(bestTime)));
+                }
+                
                 UI::TableNextColumn();
             }
 
             if (doScroll)
             {
                 float max = UI::GetScrollMaxY();
-                auto dist = Math::Max(currentCp - 3,0) / Math::Max(float( curTimes.Length  - 5),1.0f) * max;
+                auto dist = Math::Max(currentRun.position - 3,0) / Math::Max(float(g_cpDataManager.mapCpCount - 5),1.0f) * max;
                 UI::SetScrollY(dist);
                 doScroll = false;
             }
 
-        UI::EndTable();
+            UI::EndTable();
         }
         UI::EndChild();
-
         UI::PopFont();
 
-        CPTimesPanelPosition = UI::GetWindowPos();
+        TimePanel_position = UI::GetWindowPos();
+        m_size = UI::GetWindowSize();
 
         UI::End();
         UI::PopStyleColor();
@@ -305,80 +226,4 @@ class CpTimesPanel : ZUtil::UiPanel , ZUtil::IHandleCpEvents, ZUtil::IHandleGame
     }
 
     
-    void SaveMapTimeData()
-    {
-        if (!g_gameState.hasMap ) return;
-
-        auto mapId = g_gameState.map.MapInfo.MapUid;
-        auto path = GetJsonSavePath();
-
-        auto obj = Json::Object();
-        auto bestArr = Json::Array();
-        auto resArr = Json::Array();
-
-        for (uint i = 0; i < curTimes.Length; i++)
-        {
-            bestArr.Add(Json::Value(bestTimes[i]));
-            resArr.Add(Json::Value(bestResetCounts[i]));
-            //print(resetCounts[i]);
-        }
-
-        obj["MapName"] = g_gameState.trimmedMapName;
-        obj["MapUid"] = mapId;
-        obj["BestTimes"] = bestArr;
-        obj["ResetCounts"] = resArr;
-
-        Json::ToFile(path, obj);
-    }
-    
-    string GetJsonSavePath(){
-        return g_saveFolderPath + "\\" + g_gameState.trimmedMapName + "-" + g_gameState.map.MapInfo.MapUid + ".json";
-    }
-
-    void LoadMapTimeData()
-    {
-        if (!g_gameState.hasMap) return;
-
-        auto path = GetJsonSavePath();
-        auto oldPath = g_saveFolderPath + "\\" + g_gameState.map.MapInfo.MapUid + ".json";
-        
-        if (IO::FileExists(path))
-        {
-            print("Loading best time data for: " + g_gameState.trimmedMapName);
-
-            bestTimesCount = LoadTimes(path);
-            
-        } else if (IO::FileExists(oldPath)) {
-            print("Found old file for " + g_gameState.trimmedMapName + ", loading it and resaving with new file name format");
-            bestTimesCount = LoadTimes(oldPath);
-            IO::Delete(oldPath);
-            SaveMapTimeData();
-        }
-    }
-
-    uint LoadTimes(string path){
-        auto data = Json::FromFile(path);
-        auto times = data["BestTimes"];
-        auto resCounts = data["ResetCounts"];
-
-        uint c = 0;
-        for (uint i = 0; i < times.Length; i++)
-        {
-            int thisTime = times[i];
-            if (thisTime != 0) c++;
-
-            bestTimes[i] = thisTime;
-        }
-
-        if(int(resCounts.GetType()) == 4)
-        {
-            print("found reset counts");
-            for (uint i = 0; i < resCounts.Length; i++)
-            {
-                bestResetCounts[i] = resCounts[i];
-            }
-        }
-
-        return c;
-    }
 }
