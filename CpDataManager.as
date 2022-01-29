@@ -220,14 +220,14 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
 
             if(fVer == 1) 
             {
-                bestRun.FromJsonObject(data["BestRun"]);
+                bestRun.FromJsonObject(data["BestRun"], mapCpCount);
 
                 auto runHistory = data["RunHistory"];
                 
                 uint historyCount = Math::Min(runHistory.Length, GeneralSettings::historyCount);
                 for (uint i = 0; i < historyCount; i++)
                 {
-                    m_runHistory[i].FromJsonObject(runHistory[i]);
+                    m_runHistory[i].FromJsonObject(runHistory[i], mapCpCount);
                 }
             } else if (fVer == 0){
 

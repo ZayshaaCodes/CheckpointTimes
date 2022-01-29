@@ -16,24 +16,26 @@ class CpRunData
         }
     }
 
-    void FromJsonObject(Json::Value obj)
+    void FromJsonObject(Json::Value obj, int CpCount)
     {
         auto jsonTimes = obj["times"];
         auto jsonResets = obj["resets"];
 
-        times.Resize(jsonTimes.Length);
-        resets.Resize(jsonResets.Length);
+        // times.Resize(jsonTimes.Length);
+        // resets.Resize(jsonResets.Length);
 
         position = 0;
 
-        for (uint i = 0; i < jsonTimes.Length; i++)
+        int loopCount = Math::Min(jsonTimes.Length, CpCount);
+
+        for (uint i = 0; i < loopCount; i++)
         {
             times[i] = jsonTimes[i];
             if (times[i] != 0)
                 position++;
         }
 
-        for (uint i = 0; i < jsonResets.Length; i++)
+        for (uint i = 0; i < loopCount; i++)
         {
             resets[i] = jsonResets[i];
         }

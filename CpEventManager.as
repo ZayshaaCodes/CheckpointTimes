@@ -82,7 +82,7 @@ class CpEventManager
 
     private uint GetCompletedCpCount(const CSmPlayer@ player){   
         // return 0;
-        return Dev::GetOffsetUint16(player, 0x688);
+        return Dev::GetOffsetUint16(player, 0x698);
     }
 
     private int GetCpTime(CSmPlayer@ player, const uint i){
@@ -93,7 +93,7 @@ class CpEventManager
 
         if(i >= count) return 0;
 
-        return Dev::ReadInt32(CPTimesArrayPtr + i * 0x20 + 0x3c) - player.StartTime;
+        return Dev::ReadInt32(CPTimesArrayPtr + ((i + 1) % 100) * 0x20 + 0x1c) - player.StartTime;
     }
 
     

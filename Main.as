@@ -1,6 +1,6 @@
 CTrackMania@ g_app;
 string g_saveFolderPath;
-bool g_debugging = true; 
+bool g_debugging = false; 
 
 array<ZUtil::PluginPanel@> _panels(0);
 
@@ -39,6 +39,7 @@ void RenderMenu()
 	}
 }
 
+
 [Setting category="Advanced Settings"]
 void RenderSettings(){
     // AdvSettings::Render(speeder);
@@ -46,6 +47,34 @@ void RenderSettings(){
     {
         if (UI::Button("Clear Current Map Data")){
             g_cpDataManager.ClearMapData();
+        }
+        if (g_debugging ) {
+            string playersPtr = "";
+            string playerPtr = "";
+            if (UI::Button("Print Player Pointer"))
+            {
+                
+                auto members = Reflection::TypeOf(g_gameState.playground.Arena).Members;
+                for (uint i = 0; i < members.Length; i++)
+                {
+                    auto name = members[i].Name;
+                    auto offset = members[i].Offset;
+                
+                    if(name == "Players"){
+                        playersPtr = Text::FormatPointer(Dev::GetOffsetUint64(g_gameState.playground.Arena, offset));
+                        playerPtr = Text::FormatPointer(Dev::ReadUInt64(Dev::GetOffsetUint64(g_gameState.playground.Arena, offset)));
+                    }
+                }
+            }
+
+            if (playersPtr != "")
+            {
+                UI::InputText("players Ptr", playersPtr);
+            }
+            if (playerPtr != "")
+            {
+                UI::InputText("player Ptr", playerPtr);
+            }
         }
     }
 
@@ -76,25 +105,8 @@ void Main(){
     _panels.InsertLast(cpSplitHud);
     _panels.InsertLast(cpHistoryPanel);
     
-    // if (g_debugging)
-    // {
-    //     auto DebugUiPanel = DebuggingUiPanel();
-    //     _panels.InsertLast(DebugUiPanel);
-    // }
 
     print("Cp Times Initialized!");
-}
-
-void Test(uint r12){
-    print("test" + r12);
-}
-
-void OnDestroyed(){
-    print("OnDestroyed");
-    if (hook !is null)
-    {
-        Dev::Unhook(hook);
-    }
 }
 
 void Update(float dt)
