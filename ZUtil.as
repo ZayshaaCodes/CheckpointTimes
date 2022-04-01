@@ -2,7 +2,8 @@ namespace ZUtil
 {
     
     string GetTrimmedMapName (CGameCtnChallenge@ map){
-        return Regex::Replace(map.MapInfo.NameForUi, """(\$[wnmoitsgzbWNMOITSGZB]|\$[0-9a-fA-F]{3})""", "");
+        auto s = Regex::Replace(map.MapInfo.NameForUi, """\$[0-9a-fA-F]{3}""", "");
+        return Regex::Replace(s, """\$[wnmoitsgzbWNMOITSGZB]""", "");
     }
 
     CSmPlayer@ GetLocalPlayer(CGamePlayground@ playground)

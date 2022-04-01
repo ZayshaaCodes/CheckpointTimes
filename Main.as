@@ -18,8 +18,14 @@ string color_Light = "\\$FFF";
 string color_DarkPos = "\\$272-";
 string color_DarkNeg = "\\$722+";
 
-string color_LightPos = "\\$2D2-";
+string color_LightPos = "\\$4D4-";
 string color_LightNeg = "\\$D22+";
+
+string color_DarkPosNs = "\\$272";
+string color_DarkNegNs = "\\$722";
+
+string color_LightPosNs = "\\$4D4";
+string color_LightNegNs = "\\$D22";
 
 float g_dt;
 
@@ -40,6 +46,8 @@ void RenderMenu()
 }
 
 
+string playersPtr = "";
+string playerPtr = "";
 [Setting category="Advanced Settings"]
 void RenderSettings(){
     // AdvSettings::Render(speeder);
@@ -49,8 +57,6 @@ void RenderSettings(){
             g_cpDataManager.ClearMapData();
         }
         if (g_debugging ) {
-            string playersPtr = "";
-            string playerPtr = "";
             if (UI::Button("Print Player Pointer"))
             {
                 
