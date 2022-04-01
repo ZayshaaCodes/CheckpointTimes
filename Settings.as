@@ -7,20 +7,22 @@ namespace GeneralSettings{
     bool HidePanelsWithInterface = true;
     [Setting category="General" name="Hide HUD With Interface"]
     bool HideHudWithInterface = false;
+    
 }
 
 [Setting category="Cp Times Panel" name="Time Panel Visible"]
 bool TimePanel_visible = true;
-
 [Setting category="Cp Times Panel" name="Time Panel Position"]
 vec2 TimePanel_position = vec2(1,400);
-
 [Setting category="Cp Times Panel" name="Time Panel Font Size" drag min=10 max=50]
 float TimePanel_fontSize = 20;
 [Setting category="Cp Times Panel" name="Time Panel Max Lines" drag min=2 max=25]
 int TimePanel_maxLines = 8;
 [Setting category="Cp Times Panel" name="Time Panel BG Color" color]
 vec4 TimePanel_bgColor = vec4(0,0,0,.5f);
+
+[Setting category="Cp Times Panel" name="Show Speeds"]
+bool TimePanel_showSpeeds = true;
 
 [Setting category="History Panel" name="Hist Panel Visible"]
 bool HistoryPanel_visible = true;

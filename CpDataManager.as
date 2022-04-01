@@ -30,10 +30,20 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
     }
 
     void AppendRun(CpRunData@ run){
-        for (uint i = m_runHistory.Length - 1; i >= 1 ; i--)
-        {
-            m_runHistory[i] = m_runHistory[i - 1];
+
+        auto lastrun = m_runHistory[0];
+        print("lastRunPos: " + lastrun.position);
+        if(run.position == 0) return;
+        if(lastrun.position > 0 && lastrun.times[lastrun.position - 1] == run.times[0])
+             return;
+
+        if(m_runHistory[0].position > 3){
+            for (uint i = m_runHistory.Length - 1; i >= 1 ; i--)
+            {
+                m_runHistory[i] = m_runHistory[i - 1];
+            }    
         }
+
         m_runHistory[0] = run;
     }
 
@@ -52,7 +62,7 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
     void OnMapLoaded(CGameCtnChallenge@ map, CSmArena@ arena){
 
         string trimmedName =  ZUtil::GetTrimmedMapName(map);
-        print("Attempting to load data for: " + trimmedName);
+        // print("Attempting to load data for: " + trimmedName);
 
         mapCpCount = ZUtil::GetEffectiveCpCount(map, arena); 
         ClearAllRunData();
@@ -83,7 +93,7 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
             currentCp = newCp + 1;
             if (newCp == -1)
             {
-                print("Restart!");
+                print("Restart! " + currentRun.position);
 
                 respawnsAtLastCP = 0;
 
@@ -92,17 +102,22 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
                 // if we've reached the same CP, 
                 // and current time is higher, yay!
                 //print(currentRun.times.Length + " | " + bestRun.times.Length + " | " + currentRun.position);
+
+                auto pos = currentRun.position - 1;
+
                 if (currentRun.position > bestRun.position){
                     improvement = true;
                 } 
                 else if ((bestRun.position == currentRun.position)                         
-                && (currentRun.position >= 0)                        
-                && (currentRun.times[currentRun.position - 1] < bestRun.times[currentRun.position - 1]))
+                && (currentRun.position >= 0)
+                && pos <= int(currentRun.times.Length) && pos >=  0
+                && (currentRun.times[pos] < bestRun.times[pos]))
                 {
                     improvement = true;
                 }
 
                 if (improvement) currentRun.wasPB = true;
+                
                 AppendRun(currentRun);
 
                 if (improvement)
@@ -128,6 +143,21 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
             print("invalid time: " + newTime);
             return;
         }
+
+		auto player = ZUtil::GetViewingPlayer();
+        CSceneVehicleVis@ vis = null;
+		auto sceneVis = g_app.GameScene;
+		if (player !is null)
+			@vis = VehicleState::GetVis(sceneVis, player);
+		else 
+			@vis = VehicleState::GetSingularVis(sceneVis);
+		if (vis is null)
+			return;
+
+        
+        auto speed=  vis.AsyncState.WorldVel.Length()* 3.6f;
+        //print(speed);
+        currentRun.speeds[i] = speed;
         
         if (!g_gameState.isRoyalMap)
         {

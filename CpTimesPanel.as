@@ -6,17 +6,17 @@ class CpTimesPanel : ZUtil::UiPanel
 
     CpTimesPanel()
     {
-        super("Checkpoint Times", TimePanel_position   , vec2(TimePanel_fontSize*19,100));
+        super("Checkpoint Times", TimePanel_position   , vec2(TimePanel_fontSize*(TimePanel_showSpeeds ? 24 : 19),100));
 
         @g_font = Resources::GetFont("DroidSans-Bold.ttf",TimePanel_fontSize);
         m_moveHud = true;
-        m_size.x = TimePanel_fontSize * 19; 
+        m_size.x = TimePanel_fontSize * (TimePanel_showSpeeds ? 24 : 19); 
     }
     
     void OnSettingsChanged() override 
     {
         @g_font = Resources::GetFont("DroidSans-Bold.ttf",TimePanel_fontSize);
-        m_size.x = TimePanel_fontSize * 19;
+        m_size.x = TimePanel_fontSize * (TimePanel_showSpeeds ? 24 : 19);
         m_size.y = GetWindowHeight();
         resizeWindow = true;
     }
@@ -74,25 +74,29 @@ class CpTimesPanel : ZUtil::UiPanel
 
         UI::PopStyleColor();
         
-        if(UI::BeginTable("tableHeaders", 5, UI::TableFlags::SizingFixedFit)) 
+        if(UI::BeginTable("tableHeaders", TimePanel_showSpeeds ? 6 : 5, UI::TableFlags::SizingFixedFit)) 
         {
             UI::TableSetupColumn("\\$s#",    UI::TableColumnFlags::WidthFixed, fSize);
             UI::TableSetupColumn("\\$sR",     UI::TableColumnFlags::WidthFixed, fSize);
+            if(TimePanel_showSpeeds)
+                UI::TableSetupColumn("\\$sSpeed",  UI::TableColumnFlags::WidthFixed, fSize * 2.5f);
             UI::TableSetupColumn("\\$sTime",  UI::TableColumnFlags::WidthFixed, fSize * 4);
             UI::TableSetupColumn("\\$sSplit", UI::TableColumnFlags::WidthFixed, fSize * 4.5f);
-            UI::TableSetupColumn("\\$sBest",  UI::TableColumnFlags::WidthFixed, fSize * 5.5f);
+            UI::TableSetupColumn("\\$sBest",  UI::TableColumnFlags::WidthFixed, fSize * (TimePanel_showSpeeds ? 7.5f : 5.5f));
             UI::TableHeadersRow();
             UI::EndTable();
         }
 
         UI::BeginChild("cpTimesList");
-        if(UI::BeginTable("table", 5, UI::TableFlags::SizingFixedFit)) 
+        if(UI::BeginTable("table", TimePanel_showSpeeds ? 6 : 5, UI::TableFlags::SizingFixedFit)) 
         {
             UI::TableSetupColumn("", UI::TableColumnFlags::WidthFixed, fSize);
             UI::TableSetupColumn("", UI::TableColumnFlags::WidthFixed, fSize);
+            if(TimePanel_showSpeeds)
+                UI::TableSetupColumn("",  UI::TableColumnFlags::WidthFixed, fSize * 2.5f);
             UI::TableSetupColumn("", UI::TableColumnFlags::WidthFixed, fSize * 4);
             UI::TableSetupColumn("", UI::TableColumnFlags::WidthFixed, fSize * 4.5f);
-            UI::TableSetupColumn("", UI::TableColumnFlags::WidthFixed, fSize * 5.5f);
+            UI::TableSetupColumn("", UI::TableColumnFlags::WidthFixed, fSize * (TimePanel_showSpeeds ? 7.5f : 5.5f));
 
             string color;
 
@@ -139,13 +143,13 @@ class CpTimesPanel : ZUtil::UiPanel
                     } 
                 }
                
-
                 UI::Text("\\$s" + color + displayReset);
                 UI::TableNextColumn();
-
+                color = color_Light;
+                
+                int curTime = currentRun.times[i];
                 // --------- Current/Last Time Text
                 int displayTime = 0;
-                int curTime = currentRun.times[i];
                 int lastTime = g_cpDataManager.m_runHistory[0].times[i];
 
                 if(int(i) < currentCp || (g_gameState.isRoyalMap && curTime != 0)) {
@@ -157,7 +161,23 @@ class CpTimesPanel : ZUtil::UiPanel
                     displayTime = lastTime;
                 } 
 
-                UI::Text( "\\$s" + color + (displayTime == 0 ? "" : Time::Format( displayTime )));
+                if(TimePanel_showSpeeds)
+                {                    
+                    int displaySpeed = 0;
+                    string speedColor = color_Light;
+                    if(int(i) < currentCp || (g_gameState.isRoyalMap && curTime != 0)) {
+                        displaySpeed = int(Math::Round(g_cpDataManager.currentRun.speeds[i] - g_cpDataManager.bestRun.speeds[i]));
+                        speedColor = displaySpeed > 0 ? color_LightPosNs : (displaySpeed < 0 ? color_LightNegNs : color_Light);
+                        
+                    } else if(int(i) >= currentCp) {
+                        displaySpeed = int(Math::Round(g_cpDataManager.m_runHistory[0].speeds[i] - g_cpDataManager.bestRun.speeds[i]));
+                        speedColor = displaySpeed > 0 ? color_DarkPosNs : (displaySpeed < 0 ? color_DarkNegNs  : color_Dark);
+                    } 
+                    UI::Text("\\$s" + speedColor + displaySpeed);
+                    UI::TableNextColumn();
+                }
+
+                UI::Text( "\\$s" + (displayTime == 0 ? "" : color + Time::Format( displayTime )));
                 UI::TableNextColumn();
                 
                 // -------Split Time Text
@@ -193,12 +213,20 @@ class CpTimesPanel : ZUtil::UiPanel
                 UI::TableNextColumn();
 
                 // Best Time Text
-                int bestTime = g_cpDataManager.bestRun.times[i];
+            int bestTime = g_cpDataManager.bestRun.times[i];
+                string speedText = "";
+                if(TimePanel_showSpeeds){
+                    speedText = "\\$333 | \\$FFF" + int(g_cpDataManager.bestRun.speeds[i]);
+                }
                 if (!g_gameState.isRoyalMap)
                 {
-                    UI::Text("\\$s" + (bestTime == 0 ? "" : g_cpDataManager.bestRun.resets[i] + " - " + Time::Format(bestTime)));
+                    auto resetCount = g_cpDataManager.bestRun.resets[i];
+                    color = "\\$F80";
+                    color = resetCount > 1 ? "\\$F00" : color;
+                    string resetText = (resetCount > 0) ? (color + resetCount + "\\$FFF") : "" + resetCount;
+                    UI::Text("\\$s" + (bestTime == 0 ? "" : resetText + "\\$333 | \\$FFF" + Time::Format(bestTime) + speedText));
                 } else {
-                    UI::Text("\\$s" + (bestTime == 0 ? "" : Time::Format(bestTime)));
+                    UI::Text("\\$s" + (bestTime == 0 ? "" : Time::Format(bestTime) + speedText));
                 }
                 
                 UI::TableNextColumn();

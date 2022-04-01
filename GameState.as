@@ -67,8 +67,7 @@ namespace ZUtil
                     trimmedMapName = ZUtil::GetTrimmedMapName(map);
                     
                     coloredMapName = playground.Map.MapInfo.NameForUi;
-                    coloredMapName = Regex::Replace(coloredMapName, "\\$0[^0-9A-Fa-f]", "\\$");
-                    coloredMapName = Regex::Replace(coloredMapName, "\\$[wnoitsgzbWNMOITSGZB]", "");
+                    coloredMapName = Regex::Replace(coloredMapName, "\\$[wnoitsgzWNMOITSGZ]", "");
                     coloredMapName = Regex::Replace(coloredMapName, "\\$", "\\$");
 
                     // print("found " + (isRoyalMap ? "royal" : "race") + " map: " + trimmedMapName);
