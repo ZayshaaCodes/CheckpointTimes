@@ -1,9 +1,10 @@
 [meta]
 name = "Checkpoint Times"
 author = "zayshaa"
-category = "Testing"
+category = "HUD"
 
-version = "9001"
+version = "1.2.2"
 
 [script]
-imports = [ "Icons.as" , "Dialogs.as" , "Formatting.as", "Time.as", "lib\\Panels.as", "lib\\ZUtil.as", "lib\\CpDataManager.as", "lib\\GameState.as"]
+dependencies = [ "VehicleState"]
+imports = [ "Icons.as" , "Dialogs.as" , "Formatting.as", "Time.as"]

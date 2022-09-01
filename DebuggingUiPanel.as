@@ -1,6 +1,6 @@
 
-[Setting category="General" name="Debugging"]
-bool Setting_General_Debugging = false;
+// [Setting category="General" name="Debugging"]
+// bool Setting_General_Debugging = false;
 
 auto base = Dev::BaseAddress();
 auto baseEnd = Dev::BaseAddressEnd();
@@ -25,7 +25,7 @@ class DebuggingUiPanel : ZUtil::UiPanel
     string input = "CGamePlayground";
     void Render() 
     {
-        if (!Setting_General_Debugging) return;
+        // if (!Setting_General_Debugging) return;
         UI::Begin("DebuggingUiPanel"); 
         
 

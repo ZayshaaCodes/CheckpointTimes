@@ -1,26 +1,90 @@
 CTrackMania@ g_app;
 string g_saveFolderPath;
-bool g_debugging = true;
+bool g_debugging = false; 
 
 array<ZUtil::PluginPanel@> _panels(0);
 
-ZUtil::CpDataManager@ g_cpDataManager;
+CpDataManager@ g_cpDataManager;
+CpEventManager@ g_cpEventManager;
 ZUtil::GameState@ g_gameState;
 
 CpTimesPanel@ cpTimesPanel;
+CpSplitHud@ cpSplitHud;
+CpTimesHistoryPanel@ cpHistoryPanel;
+
+string color_Dark = "\\$333";
+string color_Light = "\\$FFF";
 
 string color_DarkPos = "\\$272-";
-string color_LightPos = "\\$0D0-";
-string color_Dark = "\\$444";
-string color_Light = "\\$FFF";
 string color_DarkNeg = "\\$722+";
-string color_LightNeg = "\\$D00+";
+
+string color_LightPos = "\\$4D4-";
+string color_LightNeg = "\\$D22+";
+
+string color_DarkPosNs = "\\$272";
+string color_DarkNegNs = "\\$722";
+
+string color_LightPosNs = "\\$4D4";
+string color_LightNegNs = "\\$D22";
 
 float g_dt;
 
 Dev::HookInfo@ hook;
 
 bool popup = true;
+
+void RenderMenu()
+{
+    if (UI::MenuItem("\\$2f9" + Icons::PuzzlePiece + "\\$fff Cp Times", selected: TimePanel_visible, enabled: GetApp().Editor !is null))
+	{
+		TimePanel_visible = !TimePanel_visible;
+	}
+    if (UI::MenuItem("\\$2f9" + Icons::PuzzlePiece + "\\$fff Cp Times History", selected: HistoryPanel_visible, enabled: GetApp().Editor !is null))
+	{
+		HistoryPanel_visible = !HistoryPanel_visible;
+	}
+}
+
+
+string playersPtr = "";
+string playerPtr = "";
+[Setting category="Advanced Settings"]
+void RenderSettings(){
+    // AdvSettings::Render(speeder);
+    if (g_gameState.hasMap)
+    {
+        if (UI::Button("Clear Current Map Data")){
+            g_cpDataManager.ClearMapData();
+        }
+        if (g_debugging ) {
+            if (UI::Button("Print Player Pointer"))
+            {
+                
+                auto members = Reflection::TypeOf(g_gameState.playground.Arena).Members;
+                for (uint i = 0; i < members.Length; i++)
+                {
+                    auto name = members[i].Name;
+                    auto offset = members[i].Offset;
+                
+                    if(name == "Players"){
+                        playersPtr = Text::FormatPointer(Dev::GetOffsetUint64(g_gameState.playground.Arena, offset));
+                        playerPtr = Text::FormatPointer(Dev::ReadUInt64(Dev::GetOffsetUint64(g_gameState.playground.Arena, offset)));
+                    }
+                }
+            }
+
+            if (playersPtr != "")
+            {
+                UI::InputText("players Ptr", playersPtr);
+            }
+            if (playerPtr != "")
+            {
+                UI::InputText("player Ptr", playerPtr);
+            }
+        }
+    }
+
+}
 
 void Main(){
     @g_app = cast<CTrackMania>(GetApp());
@@ -30,46 +94,32 @@ void Main(){
     if(!IO::FolderExists(g_saveFolderPath)) IO::CreateFolder(g_saveFolderPath);
 
     @cpTimesPanel = CpTimesPanel();
+    @cpSplitHud = CpSplitHud();
+    @cpHistoryPanel = CpTimesHistoryPanel();
 
-    @g_cpDataManager = ZUtil::CpDataManager();
+    @g_cpDataManager = CpDataManager();
+    @g_cpEventManager = CpEventManager();
+
     @g_gameState = ZUtil::GameState();
 
-    g_cpDataManager.RegisterCallbacks(cpTimesPanel);
-    g_gameState.RegisterLoadCallbacks(cpTimesPanel);
+    g_cpEventManager.RegisterCallbacks(g_cpDataManager);    
+    g_cpEventManager.RegisterCallbacks(cpSplitHud);    
+    g_gameState.RegisterLoadCallbacks(g_cpDataManager);
+    g_gameState.RegisterLoadCallbacks(cpSplitHud);
 
     _panels.InsertLast(cpTimesPanel);
+    _panels.InsertLast(cpSplitHud);
+    _panels.InsertLast(cpHistoryPanel);
     
-    if (g_debugging)
-    {
-        auto DebugUiPanel = DebuggingUiPanel();
-        _panels.InsertLast(DebugUiPanel);
-    }
 
     print("Cp Times Initialized!");
-
-    
-    // auto base =  Dev::BaseAddress();
-    // @hook = Dev::Hook(base + 0x1092f73, 0, "Test");
-
-}
-
-void Test(uint r12){
-    print("test" + r12);
-}
-
-void OnDestroyed(){
-    print("OnDestroyed");
-    if (hook !is null)
-    {
-        Dev::Unhook(hook);
-    }
 }
 
 void Update(float dt)
 {
     g_dt = dt;
     g_gameState.Update(dt);
-    g_cpDataManager.Update(g_gameState.player);
+    g_cpEventManager.Update(g_gameState.player);
 
     for (uint i = 0; i < _panels.Length; i++) _panels[i].Update(dt);
 }
@@ -103,6 +153,10 @@ string FloatToHex(float v){
     return letters[i - 10];
 }
 
+string ColorToHex(vec4 color){
+    return "\\$" + FloatToHex(color.x) + FloatToHex(color.y) + FloatToHex(color.z);
+}
+
 //Todo: improve this...
 float fade = 0;
 void FadeColorToWhite(){
@@ -116,4 +170,3 @@ void FadeColorToWhite(){
         yield();
     }
 }
-
