@@ -14,11 +14,11 @@ class CpSplitHud : ZUtil::NvgPanel, ZUtil::IHandleCpEvents, ZUtil::IHandleGameSt
     float dist = 50;
     float t = 0;
 
-    Resources::Font@ g_font;
+    nvg::Font g_font;
     CpSplitHud(){
         super("Cp Hud", SplitHud_position, SplitHud_size);
         //m_moveHud = true;
-        @g_font = Resources::GetFont("DroidSans-Bold.ttf",20);
+        g_font = nvg::LoadFont("DroidSans-Bold.ttf");
         OnSettingsChanged();
     }
 

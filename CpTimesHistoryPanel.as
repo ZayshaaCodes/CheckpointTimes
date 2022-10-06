@@ -1,10 +1,10 @@
 class CpTimesHistoryPanel : ZUtil::UiPanel, ZUtil::IHandleGameStateEvents
 {
 
-    Resources::Font@ g_font;
+    UI::Font@ g_font;
     CpTimesHistoryPanel(){
         super("Checkpoint Times Histor", HistoryPanel_position, HistoryPanel_size);
-        @g_font = Resources::GetFont("DroidSans-Bold.ttf",20);
+        @g_font = UI::LoadFont("DroidSans-Bold.ttf");
     }
 
 

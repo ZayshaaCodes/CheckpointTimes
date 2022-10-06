@@ -18,12 +18,12 @@ class DebuggingUiPanel : ZUtil::UiPanel
         
     }
 
-    void OnSettingsChanged() {}
+    void OnSettingsChanged() override {}
 
 
 
     string input = "CGamePlayground";
-    void Render() 
+    void Render() override
     {
         // if (!Setting_General_Debugging) return;
         UI::Begin("DebuggingUiPanel"); 
@@ -118,7 +118,7 @@ class DebuggingUiPanel : ZUtil::UiPanel
         
     }
 
-    void Update(float dt) {
+    void Update(float dt) override {
         
         if(g_gameState.hasPlayground){
             auto ai = g_gameState.playground.ArenaInterface;

@@ -3,8 +3,8 @@ name = "Checkpoint Times"
 author = "zayshaa"
 category = "HUD"
 
-version = "1.2.2"
+version = "1.2.3"
 
 [script]
-dependencies = [ "VehicleState"]
-imports = [ "Icons.as" , "Dialogs.as" , "Formatting.as", "Time.as"]
+dependencies = [ "VehicleState" ]
+imports = [ ]
