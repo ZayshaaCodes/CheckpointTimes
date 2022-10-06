@@ -10,7 +10,6 @@ interface IHandleCpEvents{
 
 class CpEventManager
 {
-
     uint lastCount = 0;
 
     private array<CpTimesCountChangeEvent@> countChangeCallbacks();
@@ -51,7 +50,6 @@ class CpEventManager
             if (count > lastCount){
                 for (uint i = 0; i < newTimeCallbacks.Length; i++){
                     auto time = GetCpTime(player, count - 1);
-                    // print(time);
                     newTimeCallbacks[i](count - 1, time);
                 }
             }
@@ -85,9 +83,9 @@ class CpEventManager
     private uint GetCompletedCpCount(const CSmPlayer@ player){   
         uint16 c = Dev::GetOffsetUint16(player, 0xa40 + 0x018);
         // uint16 c = Dev::GetOffsetUint16(player, 0x730 + 0x018);
-        if (c > 300) //more than 500? probably not a real count
+        if (c > 300) //more than 300? probably not a real count
         {
-            print("completedCpCount > 500. this is probably bad : " + c);
+            print("completedCpCount > 300. this is probably bad : " + c);
             return 0;
         }
         

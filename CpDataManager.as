@@ -3,7 +3,6 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
 {
 
     CpRunData@ bestRun = CpRunData();
-    CpRunData@ previousBestRun = CpRunData();
     CpRunData@ currentRun = CpRunData();
     array<CpRunData> m_runHistory(0);
 
@@ -28,7 +27,7 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
         bestRun.Clear();
         currentRun.Clear();
         previousBestRun.Clear();
-        
+
         for (uint i = 0; i < m_runHistory.Length; i++)
             m_runHistory[i].Clear();
     }
@@ -36,7 +35,6 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
     void AppendRun(CpRunData@ run){
 
         auto lastrun = m_runHistory[0];
-        //print("lastRunPos: " + lastrun.position);
         if(run.position == 0) return;
         if(lastrun.position > 0 && lastrun.times[lastrun.position - 1] == run.times[0])
              return;
@@ -70,7 +68,6 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
 
         mapCpCount = ZUtil::GetEffectiveCpCount(map, arena); 
         ClearAllRunData();
-        ResizeAllRunData(mapCpCount);
 
         LoadMapTimeData(map);
         currentCp = 0;
@@ -126,7 +123,7 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
                     @currentRun = temp;
                     
                 } 
-                currentRun.ClearAll();                
+                currentRun.ClearAll();
                 SaveMapTimeData();
             }
         }
@@ -191,10 +188,7 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
 
         }
 
-        //TODO: setup an event for this
         cpTimesPanel.doScroll = true;
-        
-        // startnew(FadeColorToWhite);
     }
     
     
