@@ -3,6 +3,7 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
 {
 
     CpRunData@ bestRun = CpRunData();
+    CpRunData@ previousBestRun = CpRunData();
     CpRunData@ currentRun = CpRunData();
     array<CpRunData> m_runHistory(0);
 
