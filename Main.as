@@ -33,6 +33,8 @@ Dev::HookInfo@ hook;
 
 bool popup = true;
 
+uint16 g_playersArrOffset = 0;
+
 void RenderMenu()
 {
     if (UI::MenuItem("\\$2f9" + Icons::PuzzlePiece + "\\$fff Cp Times", selected: TimePanel_visible, enabled: GetApp().Editor !is null))
@@ -48,19 +50,22 @@ void RenderMenu()
 
 string playersPtr = "";
 string playerPtr = "";
-[Setting category="Advanced Settings"]
-void RenderSettings(){
+[SettingsTab name="Advanced Settings"]
+void settings(){
     // AdvSettings::Render(speeder);
+    if (g_debugging ) {
+        UI::InputText("playersArr* offset", g_playersArrOffset + "");
+    }
     if (g_gameState.hasMap)
     {
         if (UI::Button("Clear Current Map Data")){
             g_cpDataManager.ClearMapData();
         }
-        if (g_debugging ) {
+        if (g_debugging) {
             if (UI::Button("Print Player Pointer"))
             {
                 
-                auto members = Reflection::TypeOf(g_gameState.playground.Arena).Members;
+                auto members = Reflection::GetType("CSmArena").Members;
                 for (uint i = 0; i < members.Length; i++)
                 {
                     auto name = members[i].Name;
@@ -87,6 +92,8 @@ void RenderSettings(){
 }
 
 void Main(){
+    
+    
     @g_app = cast<CTrackMania>(GetApp());
 
     g_saveFolderPath = IO::FromDataFolder("CheckpointTimes");
@@ -102,15 +109,26 @@ void Main(){
 
     @g_gameState = ZUtil::GameState();
 
-    g_cpEventManager.RegisterCallbacks(g_cpDataManager);    
-    g_cpEventManager.RegisterCallbacks(cpSplitHud);    
-    g_gameState.RegisterLoadCallbacks(g_cpDataManager);
-    g_gameState.RegisterLoadCallbacks(cpSplitHud);
+    if (!g_debugging)
+    {
+        g_cpEventManager.RegisterCallbacks(g_cpDataManager);    
+        g_cpEventManager.RegisterCallbacks(cpSplitHud);    
+        g_gameState.RegisterLoadCallbacks(g_cpDataManager);
+        g_gameState.RegisterLoadCallbacks(cpSplitHud);
+    }
 
     _panels.InsertLast(cpTimesPanel);
     _panels.InsertLast(cpSplitHud);
     _panels.InsertLast(cpHistoryPanel);
     
+    auto members = Reflection::GetType("CSmArena").Members;
+    for (uint i = 0; i < members.Length; i++)
+    {    
+        if(members[i].Name == "Players"){
+            g_playersArrOffset = members[i].Offset;
+            break;
+        }
+    }
 
     print("Cp Times Initialized!");
 }

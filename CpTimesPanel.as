@@ -1,21 +1,21 @@
 class CpTimesPanel : ZUtil::UiPanel
 {
     bool doScroll = false;
-    Resources::Font@ g_font;
+    UI::Font@ g_font;
     bool resizeWindow = false;
 
     CpTimesPanel()
     {
         super("Checkpoint Times", TimePanel_position   , vec2(TimePanel_fontSize*(TimePanel_showSpeeds ? 24 : 19),100));
 
-        @g_font = Resources::GetFont("DroidSans-Bold.ttf",TimePanel_fontSize);
+        @g_font = UI::LoadFont("DroidSans-Bold.ttf");
         m_moveHud = true;
         m_size.x = TimePanel_fontSize * (TimePanel_showSpeeds ? 24 : 19); 
     }
     
     void OnSettingsChanged() override 
     {
-        @g_font = Resources::GetFont("DroidSans-Bold.ttf",TimePanel_fontSize);
+        @g_font = UI::LoadFont("DroidSans-Bold.ttf");
         m_size.x = TimePanel_fontSize * (TimePanel_showSpeeds ? 24 : 19);
         m_size.y = GetWindowHeight();
         resizeWindow = true;

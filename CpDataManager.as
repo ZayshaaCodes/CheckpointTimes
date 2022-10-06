@@ -3,6 +3,7 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
 {
 
     CpRunData@ bestRun = CpRunData();
+    CpRunData@ previousBestRun = CpRunData();
     CpRunData@ currentRun = CpRunData();
     array<CpRunData> m_runHistory(0);
 
@@ -14,9 +15,10 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
         m_runHistory.Resize(GeneralSettings::historyCount);
     }
 
-    void ResizeAllRundData(const int &in count){
+    void ResizeAllRunData(const int &in count){
         bestRun.Resize(count);
         currentRun.Resize(count);
+        previousBestRun.Resize(count);
 
         for (uint i = 0; i < m_runHistory.Length; i++)
             m_runHistory[i].Resize(count);
@@ -25,6 +27,8 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
     void ClearAllRunData(){
         bestRun.Clear();
         currentRun.Clear();
+        previousBestRun.Clear();
+
         for (uint i = 0; i < m_runHistory.Length; i++)
             m_runHistory[i].Clear();
     }
@@ -32,7 +36,6 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
     void AppendRun(CpRunData@ run){
 
         auto lastrun = m_runHistory[0];
-        print("lastRunPos: " + lastrun.position);
         if(run.position == 0) return;
         if(lastrun.position > 0 && lastrun.times[lastrun.position - 1] == run.times[0])
              return;
@@ -66,7 +69,6 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
 
         mapCpCount = ZUtil::GetEffectiveCpCount(map, arena); 
         ClearAllRunData();
-        ResizeAllRundData(mapCpCount);
 
         LoadMapTimeData(map);
         currentCp = 0;
@@ -93,15 +95,9 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
             currentCp = newCp + 1;
             if (newCp == -1)
             {
-                print("Restart! " + currentRun.position);
-
+                //print("Restart! " + currentRun.position);
                 respawnsAtLastCP = 0;
-
                 bool improvement = false;
-
-                // if we've reached the same CP, 
-                // and current time is higher, yay!
-                //print(currentRun.times.Length + " | " + bestRun.times.Length + " | " + currentRun.position);
 
                 auto pos = currentRun.position - 1;
 
@@ -122,14 +118,13 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
 
                 if (improvement)
                 {
-                    print("New best!");
+                    print("New Personal Best! " + Time::Format(currentRun.times[pos]));
                     auto temp = bestRun;
                     @bestRun = currentRun;
                     @currentRun = temp;
                     
                 } 
                 currentRun.ClearAll();
-                
                 SaveMapTimeData();
             }
         }
@@ -137,10 +132,9 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
 
     void OnCPNewTimeEvent(int i, int newTime)
     {
-
         if (newTime < 0)
         {
-            print("invalid time: " + newTime);
+            //print("invalid time: " + newTime);
             return;
         }
 
@@ -196,7 +190,6 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
         }
 
         cpTimesPanel.doScroll = true;
-        // startnew(FadeColorToWhite);
     }
     
     

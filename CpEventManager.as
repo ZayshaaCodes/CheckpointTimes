@@ -81,16 +81,34 @@ class CpEventManager
     }
 
     private uint GetCompletedCpCount(const CSmPlayer@ player){   
-        // return 0;
-        return Dev::GetOffsetUint16(player, 0x6F0);
+        uint16 c = Dev::GetOffsetUint16(player, 0xa40 + 0x018);
+        // uint16 c = Dev::GetOffsetUint16(player, 0x730 + 0x018);
+        if (c > 300) //more than 300? probably not a real count
+        {
+            print("completedCpCount > 300. this is probably bad : " + c);
+            return 0;
+        }
+        
+        return c;
     }
 
     private int GetCpTime(CSmPlayer@ player, const uint i){
 
         // return 0;
-        auto CPTimesArrayPtr = Dev::GetOffsetUint64(player, 0x6D8);
-        auto count = GetCompletedCpCount(player);
+        auto CPTimesArrayPtr = Dev::GetOffsetUint64(player, 0xa40);
+        // auto CPTimesArrayPtr = Dev::GetOffsetUint64(player, 0x730);
+        auto playersArrPty = Dev::GetOffsetUint64(g_gameState.arena, g_playersArrOffset);
+        
+        auto diff = Math::Abs(int64(playersArrPty) - int64(CPTimesArrayPtr));
+        auto arrayPtrSeemsValid = diff < 4000000000; // very rough check but it will catch a lot of cases
+        if (g_debugging) print("diff of : " + diff);
+        if (!arrayPtrSeemsValid)
+        {
+            print("invalid cp times array ptr? : " + Text::FormatPointer(CPTimesArrayPtr));
+            return 0; //to avoid a possible crash
+        }
 
+        auto count = GetCompletedCpCount(player);
         if(i >= count) return 0;
 
         return Dev::ReadInt32(CPTimesArrayPtr + ((i + 1) % 100) * 0x20 + 0x1c) - player.StartTime;
