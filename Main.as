@@ -106,7 +106,6 @@ void Main(){
 
     @g_cpDataManager = CpDataManager();
     @g_cpEventManager = CpEventManager();
-
     @g_gameState = ZUtil::GameState();
 
     if (!g_debugging)
@@ -121,16 +120,20 @@ void Main(){
     _panels.InsertLast(cpSplitHud);
     _panels.InsertLast(cpHistoryPanel);
     
-    auto members = Reflection::GetType("CSmArena").Members;
-    for (uint i = 0; i < members.Length; i++)
-    {    
-        if(members[i].Name == "Players"){
-            g_playersArrOffset = members[i].Offset;
-            break;
+    if(g_debugging)
+    {
+        auto members = Reflection::GetType("CSmArena").Members;
+        for (uint i = 0; i < members.Length; i++)
+        {    
+            if(members[i].Name == "Players"){
+                g_playersArrOffset = members[i].Offset;
+                break;
+            }
         }
     }
 
     print("Cp Times Initialized!");
+
 }
 
 void Update(float dt)
