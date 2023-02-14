@@ -1,6 +1,9 @@
 funcdef void CpTimesCountChangeEvent(int);
 funcdef void CpNewTimeEvent(int, int);
 
+int ArrayVectorOffset = 0xc68;
+
+
 array<int> cpTimes(0);
 
 interface IHandleCpEvents{
@@ -21,6 +24,7 @@ class CpEventManager
     }
 
     //TODO: fix me, only getting last cp.
+    //note: if there are more than 100 cps, only last 100 can be gotten
     uint GetAllCpTimes(CSmPlayer@ player, array<int>@ arr){     
         if (player is null) return 0;
 
@@ -53,6 +57,9 @@ class CpEventManager
                     newTimeCallbacks[i](count - 1, time);
                 }
             }
+            
+            
+
             lastCount = count;
         }
     }
@@ -81,7 +88,7 @@ class CpEventManager
     }
 
     private uint GetCompletedCpCount(const CSmPlayer@ player){   
-        uint16 c = Dev::GetOffsetUint16(player, 0xa40 + 0x018);
+        uint16 c = Dev::GetOffsetUint16(player, ArrayVectorOffset + 0x018);
         // uint16 c = Dev::GetOffsetUint16(player, 0x730 + 0x018);
         if (c > 300) //more than 300? probably not a real count
         {
@@ -95,7 +102,7 @@ class CpEventManager
     private int GetCpTime(CSmPlayer@ player, const uint i){
 
         // return 0;
-        auto CPTimesArrayPtr = Dev::GetOffsetUint64(player, 0xa40);
+        auto CPTimesArrayPtr = Dev::GetOffsetUint64(player, ArrayVectorOffset);
         // auto CPTimesArrayPtr = Dev::GetOffsetUint64(player, 0x730);
         auto playersArrPty = Dev::GetOffsetUint64(g_gameState.arena, g_playersArrOffset);
         

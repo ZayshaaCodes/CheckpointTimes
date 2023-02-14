@@ -68,6 +68,8 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
         // print("Attempting to load data for: " + trimmedName);
 
         mapCpCount = ZUtil::GetEffectiveCpCount(map, arena); 
+        // print(mapCpCount + " cps?");
+        ResizeAllRunData(mapCpCount);
         ClearAllRunData();
 
         LoadMapTimeData(map);
@@ -130,6 +132,7 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
         }
     }
 
+    int lastTime = 0;
     void OnCPNewTimeEvent(int i, int newTime)
     {
         if (newTime < 0)
@@ -137,6 +140,11 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
             //print("invalid time: " + newTime);
             return;
         }
+        if (lastTime >= newTime)
+        {
+            
+        }
+        lastTime = newTime;        
 
 		auto player = ZUtil::GetViewingPlayer();
         CSceneVehicleVis@ vis = null;
@@ -202,6 +210,7 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
         auto mapId = map.MapInfo.MapUid;
         auto path = GetJsonSavePath(map);
 
+        print(path);
         auto obj = Json::Object();
         auto lastRunsArr = Json::Array();
 
