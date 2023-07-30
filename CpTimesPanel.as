@@ -8,14 +8,14 @@ class CpTimesPanel : ZUtil::UiPanel
     {
         super("Checkpoint Times", TimePanel_position   , vec2(TimePanel_fontSize*(TimePanel_showSpeeds ? 24 : 19),100));
 
-        @g_font = UI::LoadFont("DroidSans-Bold.ttf");
+        @g_font = UI::LoadFont("DroidSans-Bold.ttf", TimePanel_fontSize);
         m_moveHud = true;
         m_size.x = TimePanel_fontSize * (TimePanel_showSpeeds ? 24 : 19); 
     }
     
     void OnSettingsChanged() override 
     {
-        @g_font = UI::LoadFont("DroidSans-Bold.ttf");
+        @g_font = UI::LoadFont("DroidSans-Bold.ttf", TimePanel_fontSize);
         m_size.x = TimePanel_fontSize * (TimePanel_showSpeeds ? 24 : 19);
         m_size.y = GetWindowHeight();
         resizeWindow = true;
@@ -108,6 +108,8 @@ class CpTimesPanel : ZUtil::UiPanel
             {
                 UI::TableNextRow();
                 UI::TableNextColumn();
+
+                UI::PushFont(g_font);
                 // CP text
                 if (g_gameState.isRoyalMap)
                 {
@@ -213,6 +215,8 @@ class CpTimesPanel : ZUtil::UiPanel
 
                 UI::Text("\\$s" + sColor + Time::Format( Math::Abs(split))); 
                 UI::TableNextColumn();
+                
+                UI::PopFont();
 
                 // Best Time Text
             int bestTime = g_cpDataManager.bestRun.times[i];
