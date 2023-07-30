@@ -1,7 +1,7 @@
 funcdef void CpTimesCountChangeEvent(int);
 funcdef void CpNewTimeEvent(int, int);
 
-int ArrayVectorOffset = 0xc68;
+int ArrayVectorOffset = 0xc58;
 
 
 array<int> cpTimes(0);
