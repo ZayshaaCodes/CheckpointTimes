@@ -3,6 +3,7 @@ namespace ZUtil
     
     string GetTrimmedMapName (CGameCtnChallenge@ map){
         auto s = Regex::Replace(map.MapInfo.NameForUi, """\$[0-9a-fA-F]{3}""", "");
+        s = Regex::Replace(s, """\|""", "");
         return Regex::Replace(s, """\$[wnmoitsgzbWNMOITSGZB]""", "");
     }
 

@@ -63,7 +63,7 @@ class CpTimesPanel : ZUtil::UiPanel
         int currentCp = g_cpDataManager.currentCp;
 
         UI::PushStyleColor(UI::Col::Button, vec4(0,0,0,.25f));
-        UI::Text("\\$s" + g_gameState.coloredMapName + " | " + currentCp);// + " | " +  currentCp + "/" + g_cpDataManager.mapCpCount);
+        UI::Text("\\$s" + g_gameState.coloredMapName + " \\$fff| " + currentCp);// + " | " +  currentCp + "/" + g_cpDataManager.mapCpCount);
         UI::SameLine();
         UI::Dummy(vec2(5, fSize));
         UI::SameLine();
@@ -101,6 +101,8 @@ class CpTimesPanel : ZUtil::UiPanel
             string color;
 
             auto currentRun = g_cpDataManager.currentRun;
+
+            // print(g_cpDataManager.mapCpCount + " | " + g_cpDataManager.currentRun.times.Length + " | " + g_cpDataManager.currentRun.resets.Length);
 
             for (uint i = 0; i < g_cpDataManager.mapCpCount; i++)
             {
