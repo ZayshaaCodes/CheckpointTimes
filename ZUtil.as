@@ -2,6 +2,11 @@ namespace ZUtil
 {
     
     string GetTrimmedMapName (CGameCtnChallenge@ map){
+        // null checks
+        if (map is null) return "";
+        if (map.MapInfo is null) return "";
+        if (map.MapInfo.NameForUi == "") return "";
+
         auto s = Regex::Replace(map.MapInfo.NameForUi, """\$[0-9a-fA-F]{3}""", "");
         s = Regex::Replace(s, """\|""", "");
         return Regex::Replace(s, """\$[wnmoitsgzbWNMOITSGZB]""", "");
@@ -93,5 +98,28 @@ namespace ZUtil
         // print("cps: " + _cpCount * lapCount);
         return _cpCount * lapCount;
 
+    }
+
+    
+    string FormatTime(int val, bool forceSign) 
+    {
+        auto formattedString = Time::Format(Math::Abs(val));
+        if (val < 0) {
+            return "-" + formattedString;
+        }
+        else if (val > 0 && forceSign) {
+            return "+" + formattedString;
+        } else 
+        {
+            return formattedString;
+        }
+    }
+
+    string FormatInt(int val, bool forceSign) 
+    {
+        if (val > 0 && forceSign) {
+            return "+" + val;
+        }
+        return "" + val;
     }
 }

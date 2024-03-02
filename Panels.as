@@ -49,6 +49,7 @@ namespace ZUtil
 				UI::SetNextWindowSize(int(m_size.x), int(m_size.y), UI::Cond::Appearing);
 				UI::SetNextWindowPos(int(pos.x), int(pos.y), UI::Cond::Appearing);
 
+				UI::PushID(m_name + "_movehud");
 				UI::Begin(Icons::ArrowsAlt + " Locator: " + m_name, m_moveHud, UI::WindowFlags::NoCollapse | UI::WindowFlags::NoSavedSettings);
 				auto lastSize = m_size;
 				auto lastPos = m_pos;
@@ -62,6 +63,7 @@ namespace ZUtil
 					OnMoveHud();
 				}
 				UI::End();
+				UI::PopID();
 				UI::PopStyleColor();
 			}
 		}
@@ -74,9 +76,77 @@ namespace ZUtil
 		}
 
 		void InternalRender() override {
-			// UI::SetNextWindowSize(int(m_size.x), int(m_size.y), UI::Cond::Appearing);
-			// UI::SetNextWindowPos(int(m_pos.x), int(m_pos.y), UI::Cond::Appearing);
+			UI::SetNextWindowSize(int(m_size.x), int(m_size.y), UI::Cond::FirstUseEver);
+			UI::SetNextWindowPos(int(m_pos.x), int(m_pos.y), UI::Cond::FirstUseEver);
 			Render();
 		}
 	}
+
+
+	// panel manager class with public methods to call on all panels
+	class PanelManager
+	{
+		array<PluginPanel@> m_panels;
+
+		void AddPanel(PluginPanel@ panel)
+		{
+			//insert at the end of the array, angelscript
+			m_panels.InsertLast(panel);
+		}
+
+		//remove panel by name
+		void RemovePanel(const string &in name)
+		{
+			for (uint i = 0; i < m_panels.Length; i++)
+			{
+				if (m_panels[i].m_name == name)
+				{
+					m_panels.RemoveAt(i);
+					return;
+				}
+			}
+		}
+
+		//log all panel names
+		void LogPanels()
+		{
+			for (uint i = 0; i < m_panels.Length; i++)
+			{
+				print(m_panels[i].m_name);
+			}
+		}
+
+		void OnSettingsChanged()
+		{
+			for (uint i = 0; i < m_panels.Length; i++)
+			{
+				m_panels[i].OnSettingsChanged();
+			}
+		}
+
+		void Render()
+		{
+			for (uint i = 0; i < m_panels.Length; i++)
+			{
+				m_panels[i].InternalRender();
+			}
+		}
+
+		void Update(float dt)
+		{
+			for (uint i = 0; i < m_panels.Length; i++)
+			{
+				m_panels[i].Update(dt);
+			}
+		}
+
+		void RenderInterface()
+		{
+			for (uint i = 0; i < m_panels.Length; i++)
+			{
+				m_panels[i].RenderInterface();
+			}
+		}
+	}
+
 }
