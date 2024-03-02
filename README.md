@@ -2,7 +2,9 @@
 
 ## Overview
 
-The CP Split Times & Speeds Tracker is a rewritten plugin i'd made for myself long ago, it's simple but very nice to have.
+The CP Split Times & Speeds Tracker is a rewritten plugin i'd made for myself long ago, it's simple but very nice to have. providing a panel that shows your split times and speeds at each checkpoint, and a minimalistic HUD that shows the last split time and speed. It also allows you to compare your current run against the most recently loaded ghost data. This plugin is designed to help you track your performance and improve your times in TrackMania.
+
+![](image.png)
 
 ## Key Features
 
