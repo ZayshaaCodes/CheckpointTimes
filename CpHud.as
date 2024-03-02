@@ -58,8 +58,8 @@ class CpHud : ZUtil::NvgPanel
         
         if(HideHudWithInterface) {
             auto playground = GetApp().CurrentPlayground;
-            if(playground is null || playground.Interface is null || Dev::GetOffsetUint32(playground.Interface, 0x1C) == 0) {
-            return;
+            if(playground is null || playground.Interface is null || !UI::IsGameUIVisible()){
+                return;
             }
         }
         
