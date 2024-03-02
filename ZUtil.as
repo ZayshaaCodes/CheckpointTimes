@@ -76,7 +76,7 @@ namespace ZUtil
             auto lm = landmarks[i];
 
             auto tag = lm.Tag;
-            if (lm.Tag == "Checkpoint" || lm.Tag == "LinkedCheckpoint" )
+            if (lm.Tag == "Checkpoint" || lm.Tag == "LinkedCheckpoint" || lm.Tag == "")
             {
                 if (lm.Order == 0)
                 {
