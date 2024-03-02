@@ -2,8 +2,8 @@
 name = "Checkpoint Times"
 author = "Zayshaa"
 category = "HUD"
-
 version = "1.0.0"
+siteid = 514
 
 [script]
 dependencies = [ "VehicleState", "MLHook", "MLFeedRaceData" ]
