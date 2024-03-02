@@ -8,7 +8,7 @@ namespace ZUtil
         if (map.MapInfo.NameForUi == "") return "";
 
         auto s = Regex::Replace(map.MapInfo.NameForUi, """\$[0-9a-fA-F]{3}""", "");
-        s = Regex::Replace(s, """\|""", "");
+        s = Regex::Replace(s, """[\|\"\']""", "");
         return Regex::Replace(s, """\$[wnmoitsgzbWNMOITSGZB]""", "");
     }
 

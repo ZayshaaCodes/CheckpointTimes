@@ -39,7 +39,7 @@ class CpDataManager : ZUtil::IHandleGameStateEvents, ZUtil::IHandleCpEvents
         if(lastrun.position > 0 && lastrun.times[lastrun.position - 1] == run.times[0])
              return;
 
-        if(m_runHistory[0].position > 3){
+        if(m_runHistory[0].position > 1){
             for (uint i = m_runHistory.Length - 1; i >= 1 ; i--)
             {
                 m_runHistory[i] = m_runHistory[i - 1];
