@@ -67,8 +67,8 @@ void RenderSettings()
             g_timesPanelColumnTimeEnabled = true;
         }
 
-        for (uint i = 0; i < g_timesPanelColumns.Length; i++) {
-            g_timesPanelColumns[i].enabled = false;
+        for (uint j = 0; j < g_timesPanelColumns.Length; j++) {
+            g_timesPanelColumns[j].enabled = false;
         }
         _timesPanel.ConfigColumbs();
     }
@@ -99,7 +99,7 @@ class CpTimesPanel : ZUtil::UiPanel
 
         float widthScaler = TimesPanel_fontSize / 19.0f;
 
-        auto numCol = Column("num", "#", 20 * widthScaler , g_timesPanelColumnCpNumberEnabled);
+        auto numCol = Column("num", "#", int(20 * widthScaler) , g_timesPanelColumnCpNumberEnabled);
         @numCol.displayValue = function(CpDataContext@ rd, int i){ 
             return i + 1; 
         };
@@ -108,7 +108,7 @@ class CpTimesPanel : ZUtil::UiPanel
         g_timesPanelColumns.InsertLast(numCol);
 
 
-        auto speedCol = Column("speed", Icons::Tachometer, 50 * widthScaler, g_timesPanelColumnSpeedEnabled);
+        auto speedCol = Column("speed", Icons::Tachometer, int(50 * widthScaler), g_timesPanelColumnSpeedEnabled);
         @speedCol.displayValue = function(CpDataContext@ rd, int i){ 
             return int(rd.current.speeds[i]); 
         };
@@ -117,7 +117,7 @@ class CpTimesPanel : ZUtil::UiPanel
         };
         g_timesPanelColumns.InsertLast(speedCol);
 
-        auto timeCol = Column("time", Icons::ClockO, 75 * widthScaler, g_timesPanelColumnTimeEnabled);
+        auto timeCol = Column("time", Icons::ClockO, int(75 * widthScaler), g_timesPanelColumnTimeEnabled);
         @timeCol.displayValue = function(CpDataContext@ rd, int i){ 
             return rd.current.times[i]; 
         };
@@ -129,7 +129,7 @@ class CpTimesPanel : ZUtil::UiPanel
         timeCol.baseColor = vec3(0.0, 1.0, 1.0);
         g_timesPanelColumns.InsertLast(timeCol);
         
-        auto pbSplitCol = Column("pbSplit", "PB Δ", 75 * widthScaler, g_timesPanelColumnPbSplitEnabled);
+        auto pbSplitCol = Column("pbSplit", "PB Δ", int(75 * widthScaler), g_timesPanelColumnPbSplitEnabled);
         @pbSplitCol.displayValue = function(CpDataContext@ rd, int i){
             int split = rd.current.times[i] - rd.best.times[i];
             //if the best time is zero, negate result
@@ -150,7 +150,7 @@ class CpTimesPanel : ZUtil::UiPanel
         pbSplitCol.signColors = true;
         g_timesPanelColumns.InsertLast(pbSplitCol);
 
-        auto pbSplitSpeedCol = Column("pbSplitSpeed", Icons::Tachometer + " Δ", 50 * widthScaler, g_timesPanelColumnPbSplitSpeedEnabled);
+        auto pbSplitSpeedCol = Column("pbSplitSpeed", Icons::Tachometer + " Δ", int(50 * widthScaler), g_timesPanelColumnPbSplitSpeedEnabled);
         @pbSplitSpeedCol.displayValue = function(CpDataContext@ rd, int i){ 
             int splitSpeed = int(rd.current.speeds[i]) - int(rd.best.speeds[i]);
             if (rd.current.wasPB) return -splitSpeed;
@@ -169,15 +169,14 @@ class CpTimesPanel : ZUtil::UiPanel
         pbSplitSpeedCol.negColor = pbSplitSpeedCol.posColor;
         pbSplitSpeedCol.posColor = temp;
         g_timesPanelColumns.InsertLast(pbSplitSpeedCol);
-
         
-        auto pbSpeedCol = Column("pbSpeed", "PB " + Icons::Tachometer, 50 * widthScaler, g_timesPanelColumnPbSpeedEnabled);
+        auto pbSpeedCol = Column("pbSpeed", "PB " + Icons::Tachometer, int(50 * widthScaler), g_timesPanelColumnPbSpeedEnabled);
         @pbSpeedCol.displayValue = function(CpDataContext@ rd, int i){ 
             return int(rd.best.speeds[i]); 
         };
         g_timesPanelColumns.InsertLast(pbSpeedCol);
 
-        Column@ pbTimeCol = Column("pbTime", "PB " + Icons::ClockO, 75 * widthScaler,    g_timesPanelColumnPbTimeEnabled);
+        Column@ pbTimeCol = Column("pbTime", "PB " + Icons::ClockO, int(75 * widthScaler),    g_timesPanelColumnPbTimeEnabled);
         @pbTimeCol.displayValue = function(CpDataContext@ rd, int i){ 
             return rd.best.times[i]; 
         };
@@ -187,7 +186,7 @@ class CpTimesPanel : ZUtil::UiPanel
         pbTimeCol.darkenAfterCurrent = false;
         g_timesPanelColumns.InsertLast(pbTimeCol);
 
-        auto targetSplitCol = Column("targetSplit", "Tar Δ", 75 * widthScaler, g_timesPanelColumnTargetSplitEnabled);
+        auto targetSplitCol = Column("targetSplit", "Tar Δ", int(75 * widthScaler), g_timesPanelColumnTargetSplitEnabled);
         @targetSplitCol.displayValue = function(CpDataContext@ rd, int i){ 
             if (rd.target.times[i] == 0) return 0;
             int split  = rd.current.times[i] - rd.target.times[i];
@@ -204,7 +203,7 @@ class CpTimesPanel : ZUtil::UiPanel
         targetSplitCol.signColors = true;
         g_timesPanelColumns.InsertLast(targetSplitCol);
 
-        auto targetTimeCol = Column("targetTime", "Tar " + Icons::ClockO, 75 * widthScaler, g_timesPanelColumnTargetTimeEnabled);
+        auto targetTimeCol = Column("targetTime", "Tar " + Icons::ClockO, int(75 * widthScaler), g_timesPanelColumnTargetTimeEnabled);
         @targetTimeCol.displayValue = function(CpDataContext@ rd, int i){ 
             return rd.target.times[i]; 
         };
